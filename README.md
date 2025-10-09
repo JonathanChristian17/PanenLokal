@@ -1,16 +1,39 @@
-# panen_lokal
+# Panen Lokal
 
-A new Flutter project.
+Panen Lokal adalah aplikasi mobile yang mempertemukan petani lokal dengan pembeli secara langsung untuk melakukan jual beli hasil panen tanpa perantara.
+Aplikasi ini membantu petani memasarkan hasil panennya dengan mudah, sementara pembeli dapat menemukan produk segar langsung dari sumbernya.
 
-## Getting Started
+## Anggota Kelompok
+- Brisbane Jovan Rivaldi Sihombing (231402001)
+- Carlos Donal Halomoan Sirait (231402031)
+- Yehezkiel Situmorang (231402061)
+- Petra Igor Keliat (231402070)
+- Pengeran Rae Ebenezer Siahaan (231402079)
+- Jonathan C. Amadeo Sembiring (231402111)
 
-This project is a starting point for a Flutter application.
+## Rencana Fitur
 
-A few resources to get you started if this is your first Flutter project:
+1. Login dan Register
+Pengguna dapat membuat akun dan masuk sesuai peran (petani, pembeli, atau admin).
+2. Beranda
+Menampilkan daftar produk hasil panen, promosi lokal, dan pencarian cepat.
+3. Keranjang 
+Pembeli dapat menambahkan produk ke keranjang dan melanjutkan ke proses pembayaran.
+4. Notifikasi
+Menampilkan informasi terbaru seperti status pesanan, konfirmasi pembayaran, atau update dari admin.
+5. Profil Pengguna
+Menampilkan dan mengedit data diri, riwayat transaksi, serta pengaturan akun.
+6. Manajemen Produk 
+Petani dapat menambahkan, mengubah, dan menghapus produk hasil panen.
+7. Pembayaran Online
+Integrasi dengan metode pembayaran digital agar transaksi lebih mudah dan aman.
+8. Chat/Konsultasi
+Fitur komunikasi langsung antara pembeli dan petani untuk menanyakan detail produk atau proses pengirima
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Deskripsi Project
+Jenis Aplikasi : Source Platform
+Framework : Flutter
+Versi SDK : 3.35.4
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Implementasi 3 halaman
+Login, Register, Home

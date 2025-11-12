@@ -1,54 +1,86 @@
 import 'package:flutter/material.dart';
 import 'register_screen.dart';
-import 'home_screen.dart';
+import 'buyer_home_screen.dart';
+import 'farmer_home_screen.dart';
+import 'pilihan_peran_screen.dart'; 
 
 class LoginScreen extends StatelessWidget {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  
+  final String role; 
 
-  LoginScreen({super.key});
+  LoginScreen({super.key, required this.role});
 
   @override
   Widget build(BuildContext context) {
+    Widget nextScreen;
+    if (role == 'pembeli') {
+      nextScreen = const BuyerHomeScreen(title: 'Beranda Pembeli');
+    } else {
+      nextScreen = const FarmerHomeScreen(title: 'Lapak Saya');
+    }
+
     return Scaffold(
-      backgroundColor: Colors.blue[50],
+      backgroundColor: Theme.of(context).colorScheme.background, // Gunakan warna background dari tema
+      appBar: AppBar(
+        title: Text('Login ${role == 'pembeli' ? 'Pembeli' : 'Petani'}'),
+        backgroundColor: Theme.of(context).colorScheme.background, // Sesuaikan warna latar belakang body
+        elevation: 0, 
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, color: Theme.of(context).colorScheme.onBackground), // Ikon dan warna disesuaikan
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const PilihanPeranScreen()),
+            );
+          },
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Center(
           child: SingleChildScrollView(
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center, // Pusatkan secara vertikal
               children: [
-                const Text(
-                  'Login',
+                Icon(
+                  role == 'pembeli' ? Icons.shopping_bag_outlined : Icons.agriculture_outlined,
+                  size: 80,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Masuk sebagai ${role == 'pembeli' ? 'Pembeli' : 'Petani'}',
                   style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blueAccent,
+                    fontSize: 28, 
+                    fontWeight: FontWeight.bold, 
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 const SizedBox(height: 30),
                 TextField(
                   controller: emailController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Email',
-                    prefixIcon: Icon(Icons.email),
-                    border: OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.email),
+                    hintText: 'Masukkan email Anda',
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 15),
                 TextField(
                   controller: passwordController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Password',
-                    prefixIcon: Icon(Icons.lock),
-                    border: OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.lock),
+                    hintText: 'Masukkan password Anda',
                   ),
                   obscureText: true,
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 25),
                 SizedBox(
                   width: double.infinity,
-                  height: 50,
+                  height: 55, // Sedikit lebih tinggi
                   child: FilledButton(
                     onPressed: () {
                       if (emailController.text.isNotEmpty &&
@@ -56,14 +88,15 @@ class LoginScreen extends StatelessWidget {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (_) =>
-                               MyHomeScreen(title: 'Beranda Komunitas'),
+                            builder: (_) => nextScreen,
                           ),
                         );
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Email dan Password wajib diisi')),
+                          SnackBar(
+                              content: const Text('Email dan Password wajib diisi'),
+                              backgroundColor: Theme.of(context).colorScheme.error,
+                          ),
                         );
                       }
                     },
@@ -73,12 +106,12 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 TextButton(
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) =>  RegisterScreen()),
+                      MaterialPageRoute(builder: (_) => RegisterScreen(role: role)),
                     );
                   },
                   child: const Text(

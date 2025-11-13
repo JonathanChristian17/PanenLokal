@@ -105,7 +105,7 @@ class _MyHomePageState extends State<MyHomeScreen> {
                               Expanded(
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.2),
+                                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.2),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: const Center(

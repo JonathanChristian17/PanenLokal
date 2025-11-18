@@ -132,6 +132,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Profil Saya'), 
         backgroundColor: Theme.of(context).colorScheme.background,
         elevation: 0,

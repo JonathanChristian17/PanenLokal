@@ -50,6 +50,7 @@ class NotificationScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Favorit & Notifikasi'),
         backgroundColor: Theme.of(context).colorScheme.background,
         elevation: 0,

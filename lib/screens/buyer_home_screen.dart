@@ -126,7 +126,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text('Harga Penawaran/Kg:', style: TextStyle(fontSize: 13, color: Colors.grey)),
-                        Text('Rp ${post.priceKg}/kg', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green.shade700)),
+                        Text('Rp ${post.priceKg}/kg', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
                       ],
                     ),
                     Column(

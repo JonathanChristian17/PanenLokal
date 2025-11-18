@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'graph_screen.dart'; // Import halaman grafik yang baru
 
 class CommodityRequest {
   final String commodity;
@@ -61,6 +62,7 @@ class RequestScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Harga Pasar & Permintaan'), 
         backgroundColor: Theme.of(context).colorScheme.background,
         elevation: 0,
@@ -156,8 +158,12 @@ class RequestScreen extends StatelessWidget {
                             icon: const Icon(Icons.show_chart, color: Colors.white),
                             label: const Text('Lihat Tren Lebih Lanjut', style: TextStyle(color: Colors.white)),
                             onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Melihat tren harga ${req.commodity}'), backgroundColor: Theme.of(context).colorScheme.primary,)
+                              // Navigasi ke halaman grafik
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => GraphScreen(commodityName: req.commodity),
+                                ),
                               );
                             },
                             style: ElevatedButton.styleFrom(

@@ -6,7 +6,12 @@ class NotificationItem {
   final IconData icon;
   final Color color;
 
-  const NotificationItem({required this.title, required this.subtitle, required this.icon, required this.color});
+  const NotificationItem({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+  });
 }
 
 class NotificationScreen extends StatelessWidget {
@@ -15,7 +20,8 @@ class NotificationScreen extends StatelessWidget {
   final List<NotificationItem> notifications = const [
     NotificationItem(
       title: 'Listing Disukai',
-      subtitle: 'Wortel Kualitas A dari Pak Budi ditambahkan ke favorit Anda.',
+      subtitle:
+          'Wortel Kualitas A dari Pak Budi ditambahkan ke favorit Anda.',
       icon: Icons.favorite,
       color: Colors.pink,
     ),
@@ -24,24 +30,6 @@ class NotificationScreen extends StatelessWidget {
       subtitle: 'Harga Bawang Merah Brebes telah turun.',
       icon: Icons.notifications_active,
       color: Colors.orange,
-    ),
-    NotificationItem(
-      title: 'Notifikasi Komunitas',
-      subtitle: 'Postingan Tomat Cherry Organik telah melewati batas waktu.',
-      icon: Icons.timer_off,
-      color: Colors.red,
-    ),
-     NotificationItem(
-      title: 'Pesanan Baru',
-      subtitle: 'Anda memiliki pesanan baru untuk Cabai Merah Keriting.',
-      icon: Icons.local_shipping,
-      color: Colors.blue,
-    ),
-    NotificationItem(
-      title: 'Pembayaran Diterima',
-      subtitle: 'Pembayaran untuk listing Kentang Granola telah dikonfirmasi.',
-      icon: Icons.payment,
-      color: Colors.green,
     ),
   ];
 
@@ -60,7 +48,10 @@ class NotificationScreen extends StatelessWidget {
             icon: const Icon(Icons.check_circle_outline),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: const Text('Tandai Semua Dibaca'), backgroundColor: Theme.of(context).colorScheme.primary,)
+                SnackBar(
+                  content: const Text('Tandai Semua Dibaca'),
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                ),
               );
             },
             tooltip: 'Tandai Semua Dibaca',
@@ -72,16 +63,34 @@ class NotificationScreen extends StatelessWidget {
         itemCount: notifications.length,
         itemBuilder: (context, index) {
           final item = notifications[index];
+
           return Card(
             margin: const EdgeInsets.only(bottom: 12),
             elevation: 4,
             child: InkWell(
               borderRadius: BorderRadius.circular(12),
+
+              // ⭐ PERUBAHAN ADA DI SINI
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Melihat detail item: ${item.title}'), backgroundColor: Theme.of(context).colorScheme.primary,)
-                );
+                if (item.title == 'Listing Disukai') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const FavoriteScreen(),
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Melihat detail item: ${item.title}'),
+                      backgroundColor:
+                          Theme.of(context).colorScheme.primary,
+                    ),
+                  );
+                }
               },
+              // ⭐ END PERUBAHAN
+
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
@@ -100,9 +109,17 @@ class NotificationScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+                          Text(
+                            item.title,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 17),
+                          ),
                           const SizedBox(height: 5),
-                          Text(item.subtitle, style: TextStyle(color: Colors.grey.shade700, fontSize: 14)),
+                          Text(
+                            item.subtitle,
+                            style: TextStyle(
+                                color: Colors.grey.shade700, fontSize: 14),
+                          ),
                         ],
                       ),
                     ),
@@ -110,6 +127,53 @@ class NotificationScreen extends StatelessWidget {
                   ],
                 ),
               ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ----------------------------------------------------------------------
+// ⭐ HALAMAN FAVORIT LANGSUNG DITAMBAHKAN DI SINI
+// ----------------------------------------------------------------------
+
+class FavoriteScreen extends StatelessWidget {
+  const FavoriteScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Map<String, String>> favorites = [
+      {
+        "name": "Wortel Kualitas A",
+        "seller": "Pak Budi",
+        "price": "Rp 14.000 / kg",
+      },
+      {
+        "name": "Bawang Merah Brebes",
+        "seller": "Ibu Rini",
+        "price": "Rp 28.000 / kg",
+      },
+    ];
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Favorit Anda"),
+        
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: favorites.length,
+        itemBuilder: (context, index) {
+          final item = favorites[index];
+
+          return Card(
+            margin: const EdgeInsets.only(bottom: 14),
+            child: ListTile(
+              title: Text(item["name"]!),
+              subtitle: Text("${item["seller"]}\n${item["price"]}"),
+              isThreeLine: true,
             ),
           );
         },

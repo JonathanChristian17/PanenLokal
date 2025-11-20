@@ -1,3 +1,4 @@
+import 'edit_profile_screen.dart';
 import 'dart:io'; 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart'; 
@@ -189,12 +190,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 20),
             _buildProfileMenuItem(
-              context,
-              icon: Icons.edit_note,
-              title: 'Edit Profil & Verifikasi Bio',
-              subtitle: 'Perbarui foto, informasi kontak (WA/IG/FB) dan lokasi Anda.',
-              onTap: () {ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Fungsionalitas edit data teks'), backgroundColor: Theme.of(context).colorScheme.primary,));}
-            ),
+            context,
+            icon: Icons.edit_note,
+            title: 'Edit Profil & Verifikasi Bio',
+            subtitle: 'Perbarui foto, informasi kontak (WA/IG/FB) dan lokasi Anda.',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+              );
+            },
+          ),
+
             _buildProfileMenuItem(
               context,
               icon: Icons.settings,

@@ -1,20 +1,22 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
-import '../models/community_data.dart'; 
+import '../models/community_data.dart';
 import 'profile_screen.dart';
-import 'request_screen.dart'; 
-import 'notification_screen.dart'; 
+import 'request_screen.dart';
+import 'notification_screen.dart';
 
 // Definisi model CommodityPost
 class CommodityPost {
-  final String commodity; 
-  final String location; 
-  final String area; 
-  final int priceKg; 
-  final double quantityTons; 
-  final String contactName; 
-  final String contactInfo; 
+  final String commodity;
+  final String location;
+  final String area;
+  final int priceKg;
+  final double quantityTons;
+  final String contactName;
+  final String contactInfo;
+  final String imagePath;
 
-  CommodityPost({
+  const CommodityPost({
     required this.commodity,
     required this.location,
     required this.area,
@@ -22,6 +24,7 @@ class CommodityPost {
     required this.quantityTons,
     required this.contactName,
     required this.contactInfo,
+    required this.imagePath,
   });
 }
 
@@ -45,7 +48,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
   }
 
   // Data Tawaran Komoditas Contoh
-  final List<CommodityPost> commodityPosts = [
+ final List<CommodityPost> commodityPosts = const [
     CommodityPost(
       commodity: 'Wortel Kualitas A',
       location: 'Bandungan, Semarang',
@@ -54,6 +57,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
       quantityTons: 17.0,
       contactName: 'Pak Budi (Penjual)',
       contactInfo: 'WA: 0812xxxxxx',
+      imagePath: 'assets/images/wortel.jpg',
     ),
     CommodityPost(
       commodity: 'Tomat Cherry Organik',
@@ -63,6 +67,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
       quantityTons: 5.5,
       contactName: 'Tani Jaya (Grup)',
       contactInfo: 'IG: @tanijaya_fresh',
+      imagePath: 'assets/images/tomat.jpg',
     ),
     CommodityPost(
       commodity: 'Bawang Merah Brebes',
@@ -72,8 +77,9 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
       quantityTons: 10.0,
       contactName: 'Ibu Siti',
       contactInfo: 'WA: 0813xxxxxx',
+      imagePath: 'assets/images/bawang.jpg',
     ),
-     CommodityPost(
+    CommodityPost(
       commodity: 'Cabai Merah Keriting',
       location: 'Magelang, Jawa Tengah',
       area: '0.5 Hektar',
@@ -81,116 +87,148 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
       quantityTons: 3.0,
       contactName: 'Petani Sejahtera',
       contactInfo: 'Telp: 0857xxxxxx',
+      imagePath: 'assets/images/cabai.jpg',
     ),
   ];
   
   Widget _buildCommodityCard(BuildContext context, CommodityPost post) {
-     return Card(
-        margin: const EdgeInsets.only(bottom: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), // Lebih rounded
-        elevation: 8, // Lebih banyak elevasi
-        shadowColor: Colors.black.withOpacity(0.1), // Warna shadow
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Melihat detail: ${post.commodity}')));
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(18.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(post.commodity, style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Icon(Icons.location_on, size: 18, color: Colors.grey.shade600),
-                    const SizedBox(width: 6),
-                    Text(post.location, style: const TextStyle(fontSize: 15, color: Colors.black87)),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), 
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.secondary.withOpacity(0.1), 
-                        borderRadius: BorderRadius.circular(20),
-                      ), 
-                      child: Text(post.area, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold)),
-                    ),
-                  ],
+    return Card(
+      color: const Color(0xFFF5F7F8),
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 4,
+      shadowColor: Colors.black.withOpacity(0.08),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Melihat detail: ${post.commodity}')),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Gambar
+              Container(
+                width: 120,
+                height: 120,
+                margin: const EdgeInsets.only(right: 12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  image: DecorationImage(
+                    image: AssetImage(post.imagePath),
+                    fit: BoxFit.cover,
+                  ),
                 ),
-                const Divider(height: 24, thickness: 1),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              ),
+
+              // Detail
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Harga Penawaran/Kg:', style: TextStyle(fontSize: 13, color: Colors.grey)),
-                        Text('Rp ${post.priceKg}/kg', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        const Text('Kuantitas Tersedia:', style: TextStyle(fontSize: 13, color: Colors.grey)),
-                        Text('${post.quantityTons} Ton', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  ],
-                ),
-                const Divider(height: 24, thickness: 1),
-                Row(
-                  children: [
-                    Icon(Icons.person, size: 18, color: Theme.of(context).colorScheme.primary),
-                    const SizedBox(width: 6),
-                    Expanded(child: Text(post.contactName, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600))),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (dialogContext) => AlertDialog(
-                            title: const Text("Hubungi Penjual?"),
-                            content: Text("Anda akan diarahkan ke luar aplikasi untuk menghubungi ${post.contactName}. Lanjutkan?"),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(dialogContext), 
-                                child: Text("Batal", style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                              ),
-                              ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pop(dialogContext); 
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Menghubungi: ${post.contactInfo}'),
-                                      backgroundColor: Theme.of(context).colorScheme.primary,
-                                    )
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Theme.of(context).colorScheme.primary,
-                                ),
-                                child: const Text("Lanjut", style: TextStyle(color: Colors.white)),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.chat_bubble_outline, size: 20, color: Colors.white),
-                      label: const Text('Hubungi', style: TextStyle(color: Colors.white)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.secondary, // Warna aksen
-                        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        elevation: 4,
+                    Text(
+                      post.commodity,
+                      style: TextStyle(
+                        fontSize: 19,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
-                    )
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.location_on,
+                            size: 16, color: Colors.grey.shade600),
+                        const SizedBox(width: 4),
+                        Text(
+                          post.location,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 16, thickness: 1),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Harga/Kg:',
+                              style:
+                                  TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
+                            Text(
+                              'Rp ${post.priceKg}/kg',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            const Text(
+                              'Kuantitas:',
+                              style:
+                                  TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
+                            Text(
+                              '${post.quantityTons} Ton',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          // TODO: Logika hubungi penjual
+                        },
+                        icon: const Icon(
+                          Icons.chat_bubble_outline,
+                          size: 18,
+                          color: Colors.white,
+                        ),
+                        label: const Text(
+                          'Hubungi',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFE6B93B),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 4,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-      );
+      ),
+    );
   }
 
   @override

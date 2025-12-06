@@ -37,16 +37,64 @@ class BuyerHomeScreen extends StatefulWidget {
 }
 
 class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
+  // Index: 0=Beranda, 1=Keranjang/Favorit (+), 2=Harga Pasar, 3=Riwayat, 4=Profil
   int _selectedIndex = 0;
   final TextEditingController _searchController = TextEditingController();
   String _selectedCategory = 'Semua';
 
   void _onItemTapped(int index) {
+      if (index == 1) {
+      setState(() {
+         _selectedIndex = 1; // Menandai FAB sebagai aktif jika ditekan
+      });
+      return; 
+    }
     setState(() {
       _selectedIndex = index;
     });
   }
 
+  // Widget Bantu untuk Item Navigasi (DISESUAIKAN UNTUK POSISI MELENGKUNG)
+  Widget _buildNavItem(BuildContext context, IconData icon, String label, int index, double verticalOffset) {
+    final bool isSelected = _selectedIndex == index;
+    // Menggunakan warna putih/kuning agar kontras dengan background hijau
+    final Color itemColor = isSelected ? Theme.of(context).colorScheme.secondary : Colors.white70;
+
+    return Transform.translate(
+      offset: Offset(0, verticalOffset), 
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: () => _onItemTapped(index),
+          customBorder: const CircleBorder(), 
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 5.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Icon(
+                  icon,
+                  color: itemColor,
+                  size: 26,
+                ),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: itemColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ... (Kode Data Tawaran Komoditas & _buildCommodityCard TETAP SAMA) ...
   // Data Tawaran Komoditas Contoh
  final List<CommodityPost> commodityPosts = const [
     CommodityPost(
@@ -397,28 +445,91 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
       ),
     );
     
-    final List<Widget> pagesWithHome = <Widget>[
-      berandaContent, 
-      const NotificationScreen(), 
-      const RequestScreen(), 
-      const ProfileScreen(), 
+    // --- Index 1: Keranjang (FAB) ---
+    // Sementara menggunakan RequestScreen atau layar Kosong
+    final Widget keranjangScreen = const Center(child: Text('Keranjang Belanja'));
+
+     // --- Index 2: Riwayat / Harga Pasar ---
+    final Widget hargaPasar = const Center(child: Text("Harga Pasar Komoditas")); 
+
+    // --- Index 3: Notifikasi / Search --- (Menggantikan Request di navbar farmer)
+    // Di Navbar Farmer: 0=Store, 1=FAB, 2=Trending, 3=Search, 4=Person
+    // Di Navbar Buyer Kita akan buat:
+    // 0=Beranda (Store), 1=FAB (Keranjang), 2=Harga Pasar (Trending), 3=Notifikasi (Search icon?), 4=Profil
+
+    final List<Widget> pages = <Widget>[
+      berandaContent, // Index 0
+      keranjangScreen, // Index 1: FAB
+      hargaPasar, // Index 2
+      const NotificationScreen(), // Index 3
+      const ProfileScreen(), // Index 4
     ];
 
+    // Widget bantu untuk FAB (Keranjang/Beli - Index 1)
+    Widget _buildBuyerFAB(BuildContext context) {
+        return FloatingActionButton(
+          onPressed: () {
+            _onItemTapped(1); // Navigasi ke Keranjang (Index 1)
+          },
+          tooltip: 'Keranjang Belanja',
+          backgroundColor: Theme.of(context).colorScheme.secondary, 
+          foregroundColor: Colors.white,
+          elevation: 12, 
+          shape: const CircleBorder(),
+          child: const Icon(Icons.shopping_cart, size: 30), 
+        );
+    }
+
     return Scaffold(
-      body: pagesWithHome[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Colors.grey.shade600,
-        backgroundColor: Colors.white,
-        elevation: 10,
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Beranda'),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Favorit'), 
-          BottomNavigationBarItem(icon: Icon(Icons.trending_up), label: 'Harga Pasar'), 
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
+      backgroundColor: Theme.of(context).colorScheme.background,
+      body: pages[_selectedIndex],
+      
+      // 🎯 IMPLEMENTASI NAVIGASI BAWAH MELENGKUNG (SAMA PERSIS STRUKTURNYA)
+      bottomNavigationBar: Stack(
+        alignment: Alignment.bottomCenter, 
+        children: [
+          // 1. CustomPainter untuk Bentuk Melengkung (Background Navbar)
+          CustomPaint(
+            size: Size(MediaQuery.of(context).size.width, 80), // Tinggi total navbar
+            painter: CustomNavbarPainter(color: const Color(0xFF1B5E20)), // 🟢 Warna Hijau Gelap SAMA
+            child: SizedBox(
+              height: 70, // Tinggi efektif area ikon menu
+              child: Row(
+                children: <Widget>[
+                  // Sisi Kiri
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildNavItem(context, Icons.home, 'Beranda', 0, 15), 
+                        _buildNavItem(context, Icons.trending_up, 'Pasar', 2, 0), 
+                      ],
+                    ),
+                  ),
+
+                  // Ruang kosong FAB (Fixed Center)
+                  const SizedBox(width: 60), 
+
+                  // Sisi Kanan
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildNavItem(context, Icons.notifications, 'Notifikasi', 3, 0),
+                        _buildNavItem(context, Icons.person, 'Profil', 4, 15), 
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // 2. Floating Action Button (FAB) diposisikan di atas puncak busur
+          Positioned(
+            top: 0,
+            child: _buildBuyerFAB(context),
+          ),
         ],
       ),
     );
@@ -452,9 +563,76 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
     );
   }
 
+
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+}
+
+// 📐 CUSTOM PAINTER UNTUK BENTUK MELENGKUNG PRESISI (Disalin di sini)
+class CustomNavbarPainter extends CustomPainter {
+  final Color color;
+  CustomNavbarPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color 
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    
+    final double curveRadius = 35; 
+    final double notchDepth = 45; 
+    final double sideCurveHeight = 20; 
+    final double center = size.width / 2;
+
+    // 1. Titik Awal: Kiri Bawah
+    path.moveTo(0, size.height);
+    
+    // 2. Tarik ke atas di sisi kiri (garis lurus ke titik awal lengkungan)
+    path.lineTo(0, sideCurveHeight); 
+    
+    // 3. Busur Pertama (Kiri-Tengah) - Melengkung ke arah atas
+    path.quadraticBezierTo(
+        size.width * 0.35, sideCurveHeight - 10, 
+        size.width * 0.35, sideCurveHeight - 10 
+    );
+
+    // 4. Notch Melengkung (Area FAB) - Cubic Bezier To untuk bentuk yang mulus dan presisi
+    path.cubicTo(
+        size.width * 0.35 + 10, sideCurveHeight - 10, 
+        center - curveRadius, -notchDepth + 20, 
+        center, -notchDepth + 20 
+    );
+    path.cubicTo(
+        center + curveRadius, -notchDepth + 20, 
+        size.width * 0.65 - 10, sideCurveHeight - 10, 
+        size.width * 0.65, sideCurveHeight - 10 
+    );
+    
+    // 5. Busur Kedua (Tengah-Kanan) - Melengkung ke arah tepi
+    path.quadraticBezierTo(
+        size.width * 0.85, sideCurveHeight - 10, 
+        size.width, sideCurveHeight 
+    );
+
+    // 6. Garis ke Kanan Bawah
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height); 
+    path.close();
+    
+    // Memberi bayangan
+    canvas.drawShadow(path, Colors.black.withOpacity(0.3), 10.0, true);
+    
+    // Menggambar bentuk
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(CustomNavbarPainter oldDelegate) {
+    return true; 
   }
 }

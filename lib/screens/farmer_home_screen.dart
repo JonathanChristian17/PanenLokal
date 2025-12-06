@@ -216,17 +216,31 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
             child: SizedBox(
               height: 70, // Tinggi efektif area ikon menu
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: <Widget>[
-                  // Offsets Y disesuaikan agar ikon mengikuti kelengkungan
-                  _buildNavItem(context, Icons.store, 'Lapak Saya', 0, 15), // Rendah (Tepi)
-                  _buildNavItem(context, Icons.trending_up, 'Harga Pasar', 2, 0), // Agak Tinggi (Samping lengkungan)
-                  
-                  // Ruang kosong untuk Floating Action Button (FAB)
+                  // Sisi Kiri (Expanded agar mengisi ruang tersisa)
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                         _buildNavItem(context, Icons.store, 'Lapak Saya', 0, 15), // Rendah (Tepi)
+                         _buildNavItem(context, Icons.trending_up, 'Harga Pasar', 2, 0), // Agak Tinggi (Samping lengkungan)
+                      ],
+                    ),
+                  ),
+
+                  // Ruang kosong PASTI (Fixed) untuk Floating Action Button (FAB) -> TEPAT DI TENGAH
                   const SizedBox(width: 60), 
 
-                  _buildNavItem(context, Icons.search, 'Permintaan', 3, 0), // Agak Tinggi
-                  _buildNavItem(context, Icons.person, 'Profil', 4, 15), // Rendah (Tepi)
+                  // Sisi Kanan (Expanded)
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                         _buildNavItem(context, Icons.search, 'Permintaan', 3, 0), // Agak Tinggi
+                         _buildNavItem(context, Icons.person, 'Profil', 4, 15), // Rendah (Tepi)
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),

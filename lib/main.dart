@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/pilihan_peran_screen.dart';
+import 'screens/login_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -117,7 +117,7 @@ class _MySplashScreenState extends State<MySplashScreen> with SingleTickerProvid
 
     Future.delayed(const Duration(seconds: 2), () { 
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const PilihanPeranScreen()),
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
     });
   }

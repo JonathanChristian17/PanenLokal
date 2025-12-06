@@ -142,9 +142,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
           IconButton(
             icon: Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
             onPressed: () {
-              // Navigasi Log Out: Kembali ke PilihanPeranScreen
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const PilihanPeranScreen()), 
+              // Tampilkan dialog konfirmasi logout
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Konfirmasi Log Out'),
+                    content: const Text('Apakah Anda yakin ingin keluar dari aplikasi?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(), // Tutup dialog (Batal)
+                        child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+                      ),
+                      FilledButton(
+                        style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+                        onPressed: () {
+                          Navigator.of(context).pop(); // Tutup dialog
+                          
+                          // Navigasi ke LoginScreen
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(builder: (_) => const LoginScreen()),
+                            (route) => false, // Hapus semua route sebelumnya agar tidak bisa back
+                          );
+                        },
+                        child: const Text('Log Out'),
+                      ),
+                    ],
+                  );
+                },
               );
             },
             tooltip: 'Log Out',

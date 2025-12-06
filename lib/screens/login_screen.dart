@@ -1,123 +1,117 @@
 import 'package:flutter/material.dart';
 import 'register_screen.dart';
-import 'buyer_home_screen.dart';
-import 'farmer_home_screen.dart';
 import 'pilihan_peran_screen.dart'; 
+import 'farmer_home_screen.dart';
+import 'buyer_home_screen.dart'; 
 
 class LoginScreen extends StatelessWidget {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  
-  final String role; 
-
-  LoginScreen({super.key, required this.role});
+  const LoginScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    Widget nextScreen;
-    if (role == 'pembeli') {
-      nextScreen = const BuyerHomeScreen(title: 'Beranda Pembeli');
-    } else {
-      nextScreen = const FarmerHomeScreen(title: 'Lapak Saya');
-    }
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background, // Gunakan warna background dari tema
-      appBar: AppBar(
-        title: Text('Login ${role == 'pembeli' ? 'Pembeli' : 'Petani'}'),
-        backgroundColor: Theme.of(context).colorScheme.background, // Sesuaikan warna latar belakang body
-        elevation: 0, 
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: Theme.of(context).colorScheme.onBackground), // Ikon dan warna disesuaikan
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const PilihanPeranScreen()),
-            );
-          },
-        ),
-      ),
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Center(
           child: SingleChildScrollView(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center, // Pusatkan secara vertikal
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  role == 'pembeli' ? Icons.shopping_bag_outlined : Icons.agriculture_outlined,
-                  size: 80,
-                  color: Theme.of(context).colorScheme.primary,
+                Image.asset(
+                  'assets/images/panenlokal.png', 
+                  width: 120,
+                  height: 120,
+                  errorBuilder: (context, error, stackTrace) => Icon(
+                    Icons.storefront_outlined,
+                    size: 100,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'Masuk sebagai ${role == 'pembeli' ? 'Pembeli' : 'Petani'}',
+                  'Selamat Datang',
                   style: TextStyle(
                     fontSize: 28, 
                     fontWeight: FontWeight.bold, 
                     color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
-                const SizedBox(height: 30),
+                Text(
+                  'Masuk untuk melanjutkan',
+                  style: TextStyle(
+                    fontSize: 16, 
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 40),
                 TextField(
                   controller: emailController,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Email',
-                    prefixIcon: const Icon(Icons.email),
-                    hintText: 'Masukkan email Anda',
+                    prefixIcon: Icon(Icons.email_outlined),
+                    hintText: 'email@contoh.com',
                   ),
                 ),
                 const SizedBox(height: 15),
                 TextField(
                   controller: passwordController,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: const Icon(Icons.lock),
-                    hintText: 'Masukkan password Anda',
-                  ),
                   obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Password',
+                    prefixIcon: Icon(Icons.lock_outline),
+                    hintText: '*********',
+                  ),
                 ),
-                const SizedBox(height: 25),
+                const SizedBox(height: 30),
                 SizedBox(
                   width: double.infinity,
-                  height: 55, // Sedikit lebih tinggi
+                  height: 55,
                   child: FilledButton(
                     onPressed: () {
-                      if (emailController.text.isNotEmpty &&
-                          passwordController.text.isNotEmpty) {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => nextScreen,
-                          ),
+                      // Validasi sederhana
+                      if (emailController.text.isNotEmpty && passwordController.text.isNotEmpty) {
+                         // Langsung masuk sebagai Pembeli (Default)
+                         Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(builder: (_) => const BuyerHomeScreen(title: 'Beranda Pembeli')),
+                          (route) => false,
                         );
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: const Text('Email dan Password wajib diisi'),
-                              backgroundColor: Theme.of(context).colorScheme.error,
-                          ),
+                          SnackBar(content: const Text('Harap isi email dan password')),
                         );
                       }
                     },
-                    child: const Text(
-                      'Login',
-                      style: TextStyle(fontSize: 18),
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
+                    child: const Text('Masuk', style: TextStyle(fontSize: 18)),
                   ),
                 ),
                 const SizedBox(height: 20),
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => RegisterScreen(role: role)),
-                    );
-                  },
-                  child: const Text(
-                    "Belum punya akun? Daftar di sini",
-                    style: TextStyle(color: Colors.blueAccent),
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("Belum punya akun? "),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                        );
+                      },
+                      child: Text(
+                        "Daftar",
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary, 
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'buyer_home_screen.dart';
-import 'farmer_home_screen.dart';
+import 'pilihan_peran_screen.dart';
 import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
-  final String role; 
-  const RegisterScreen({super.key, required this.role});
+  const RegisterScreen({super.key});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -14,16 +12,18 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController(); // Tambahan No HP
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController = TextEditingController();
 
   void _register() {
     final name = nameController.text.trim();
     final email = emailController.text.trim();
+    final phone = phoneController.text.trim();
     final password = passwordController.text.trim();
     final confirmPassword = confirmPasswordController.text.trim();
 
-    if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+    if (name.isEmpty || email.isEmpty || phone.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: const Text('Semua field harus diisi'), backgroundColor: Theme.of(context).colorScheme.error,),
       );
@@ -37,17 +37,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
     
-    Widget nextScreen;
-    if (widget.role == 'pembeli') {
-      nextScreen = const BuyerHomeScreen(title: 'Beranda Pembeli');
-    } else {
-      nextScreen = const FarmerHomeScreen(title: 'Lapak Saya');
-    }
-
+    // Register Sukses -> Lanjut ke Pemilihan Peran
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => nextScreen,
+        builder: (_) => const PilihanPeranScreen(),
       ),
     );
   }
@@ -57,12 +51,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
-        title: Text('Daftar Akun ${widget.role == 'pembeli' ? 'Pembeli' : 'Petani'}'),
+        title: const Text('Daftar Akun Baru'),
         backgroundColor: Theme.of(context).colorScheme.background,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new, color: Theme.of(context).colorScheme.onBackground),
-          onPressed: () => Navigator.pop(context), // Kembali ke LoginScreen
+          onPressed: () => Navigator.pop(context), 
         ),
       ),
       body: Padding(
@@ -73,13 +67,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  widget.role == 'pembeli' ? Icons.person_add_alt_1_outlined : Icons.nature_people_outlined,
+                  Icons.person_add_rounded,
                   size: 80,
                   color: Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'Daftar sebagai ${widget.role == 'pembeli' ? 'Pembeli' : 'Petani'}',
+                  'Buat Akun Anda',
                   style: TextStyle(
                     fontSize: 28, 
                     fontWeight: FontWeight.bold, 
@@ -102,6 +96,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     labelText: 'Email',
                     prefixIcon: Icon(Icons.email),
                     hintText: 'Cth: email@contoh.com',
+                  ),
+                ),
+                const SizedBox(height: 15),
+                TextField(
+                  controller: phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'Nomor HP',
+                    prefixIcon: Icon(Icons.phone),
+                    hintText: 'Cth: 08123456789',
                   ),
                 ),
                 const SizedBox(height: 15),
@@ -130,24 +134,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   height: 55,
                   child: FilledButton(
                     onPressed: _register,
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
                     child: const Text(
-                      'Daftar',
+                      'Daftar Sekarang',
                       style: TextStyle(fontSize: 18),
                     ),
                   ),
                 ),
                 const SizedBox(height: 20),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => LoginScreen(role: widget.role)),
-                    );
-                  },
-                  child: const Text(
-                    'Sudah punya akun? Login di sini',
-                    style: TextStyle(color: Colors.blueAccent),
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("Sudah punya akun? "),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        );
+                      },
+                      child: Text(
+                        "Login",
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary, 
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

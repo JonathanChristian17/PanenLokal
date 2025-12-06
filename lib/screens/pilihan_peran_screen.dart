@@ -47,7 +47,7 @@ class PilihanPeranScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Image(
-                image: AssetImage('assets/images/panenlokal.png'), 
+                image: AssetImage('assets/images/panenlokal_logo.png'), 
                 width: 150, 
                 height: 150,
               ),

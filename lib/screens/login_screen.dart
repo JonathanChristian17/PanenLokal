@@ -22,7 +22,7 @@ class LoginScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Image.asset(
-                  'assets/images/panenlokal.png', 
+                  'assets/images/panenlokal_logo.png', 
                   width: 120,
                   height: 120,
                   errorBuilder: (context, error, stackTrace) => Icon(

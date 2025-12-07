@@ -74,7 +74,6 @@ class LoginScreen extends StatelessWidget {
                     onPressed: () {
                       // Validasi sederhana
                       if (emailController.text.isNotEmpty && passwordController.text.isNotEmpty) {
-                         // Langsung masuk sebagai Pembeli (Default)
                          Navigator.of(context).pushAndRemoveUntil(
                           MaterialPageRoute(builder: (_) => const BuyerHomeScreen(title: 'Beranda Pembeli')),
                           (route) => false,

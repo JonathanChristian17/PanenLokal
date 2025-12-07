@@ -5,7 +5,6 @@ import 'farmer_home_screen.dart';
 class PilihanPeranScreen extends StatelessWidget {
   const PilihanPeranScreen({super.key});
 
-  // Fungsi untuk menampilkan dialog konfirmasi
   void _showConfirmationDialog(BuildContext context, String role, VoidCallback onConfirm) {
     showDialog(
       context: context,
@@ -15,13 +14,13 @@ class PilihanPeranScreen extends StatelessWidget {
           content: Text('Apakah kamu ingin menjadi "$role"?'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(), // Tutup dialog (Batal)
+              onPressed: () => Navigator.of(context).pop(), 
               child: const Text('Batal', style: TextStyle(color: Colors.grey)),
             ),
             FilledButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Tutup dialog
-                onConfirm(); // Jalankan navigasi
+                Navigator.of(context).pop(); 
+                onConfirm(); 
               },
               child: const Text('Ya, Lanjutkan'),
             ),
@@ -101,7 +100,6 @@ class PilihanPeranScreen extends StatelessWidget {
   }
 }
 
-// Widget bantu untuk tombol pilihan peran
 class _RoleSelectionButton extends StatelessWidget {
   final IconData icon;
   final String label;

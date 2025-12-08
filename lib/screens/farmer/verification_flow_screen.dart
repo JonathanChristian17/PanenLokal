@@ -37,7 +37,7 @@ class _VerificationFlowScreenState extends State<VerificationFlowScreen> {
           style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
         ),
         const SizedBox(height: 15),
-        const Text('1. Kepercayaan Pembeli Tinggi', style: TextStyle(fontSize: 16)),
+        const Text('1. Kepercayaan Tinggi', style: TextStyle(fontSize: 16)),
         const Text('2. Akses ke Fitur Lelang Premium', style: TextStyle(fontSize: 16)),
         const Text('3. Prioritas Tampilan di Beranda', style: TextStyle(fontSize: 16)),
         const SizedBox(height: 30),

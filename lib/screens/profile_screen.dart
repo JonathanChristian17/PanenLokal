@@ -1,128 +1,49 @@
 import 'edit_profile_screen.dart';
+import 'verification_form_screen.dart';
 import 'dart:io'; 
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart'; 
-import 'package:permission_handler/permission_handler.dart'; 
 import 'login_screen.dart'; 
-import 'pilihan_peran_screen.dart'; // Untuk log out ke pilihan peran
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final bool isBuyer;
+  const ProfileScreen({super.key, this.isBuyer = false});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  File? _selectedImage;
-
-  // --- LOGIKA PERIZINAN DAN PEMILIHAN GAMBAR (Dilewati untuk keringkasan) ---
-  // Pastikan Anda mengimplementasikan ini dengan benar di aplikasi nyata
-  Future<void> _pickImage(ImageSource source) async {
-    PermissionStatus status;
-    if (source == ImageSource.camera) {
-      status = await Permission.camera.request();
-    } else {
-      status = await Permission.photos.request();
-    }
-
-    if (status.isGranted) {
-      final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(source: source);
-      if (pickedFile != null) {
-        setState(() {
-          _selectedImage = File(pickedFile.path);
-        });
-      }
-    } else {
-      _showPermissionDeniedDialog(context);
-    }
-  }
-
-  void _showImageSourceActionSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ListTile(
-                leading: const Icon(Icons.camera_alt),
-                title: const Text('Ambil Foto'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickImage(ImageSource.camera);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('Pilih dari Galeri'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickImage(ImageSource.gallery);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _showPermissionDeniedDialog(BuildContext context) {
+  // Mock Data
+  bool _isVerified = false; // Status Verifikasi
+  
+  // Reusable Layered Card
+  // (Method moved to bottom for better organization)
+  void _handleLogout() {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Izin Ditolak'),
-          content: const Text('Aplikasi memerlukan akses ke kamera atau galeri Anda untuk mengganti foto profil.'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Tutup'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('Pengaturan'),
-              onPressed: () {
-                openAppSettings(); // Buka pengaturan aplikasi
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-  // --- END LOGIKA PERIZINAN DAN PEMILIHAN GAMBAR ---
-
-  Widget _buildProfileAvatar(BuildContext context) {
-    return Center(
-      child: Stack(
-        children: [
-          CircleAvatar(
-            radius: 40, // Lebih besar
-            backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2), // Warna disesuaikan
-            backgroundImage: _selectedImage != null ? FileImage(_selectedImage!) : null,
-            child: _selectedImage == null ?
-              Icon(Icons.person, size: 48, color: Theme.of(context).colorScheme.primary) : null,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Konfirmasi Keluar"),
+        content: const Text("Apakah Anda yakin ingin keluar dari akun?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Batal", style: TextStyle(color: Colors.grey)),
           ),
-          Positioned(
-            bottom: 0,
-            right: 0,
-            child: GestureDetector(
-              onTap: () {
-                _showImageSourceActionSheet(context);
-              },
-              child: CircleAvatar(
-                radius: 15, // Sedikit lebih besar
-                backgroundColor: Theme.of(context).colorScheme.secondary, // Warna aksen
-                child: const Icon(Icons.edit, size: 16, color: Colors.white),
-              ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade600,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-          ),
+            onPressed: () {
+              Navigator.pop(ctx);
+               Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false, 
+              );
+            }, 
+            child: const Text("Log Out", style: TextStyle(color: Colors.white)),
+          )
         ],
       ),
     );
@@ -131,147 +52,254 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('Profil Saya'), 
-        backgroundColor: Theme.of(context).colorScheme.background,
-        elevation: 0,
-        foregroundColor: Theme.of(context).colorScheme.onBackground,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
-            onPressed: () {
-              // Tampilkan dialog konfirmasi logout
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: const Text('Konfirmasi Log Out'),
-                    content: const Text('Apakah Anda yakin ingin keluar dari aplikasi?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(), // Tutup dialog (Batal)
-                        child: const Text('Batal', style: TextStyle(color: Colors.grey)),
-                      ),
-                      FilledButton(
-                        style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
-                        onPressed: () {
-                          Navigator.of(context).pop(); // Tutup dialog
-                          
-                          // Navigasi ke LoginScreen
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(builder: (_) => const LoginScreen()),
-                            (route) => false, // Hapus semua route sebelumnya agar tidak bisa back
-                          );
-                        },
-                        child: const Text('Log Out'),
-                      ),
-                    ],
-                  );
-                },
-              );
-            },
-            tooltip: 'Log Out',
-          ),
-        ],
-      ),
+      backgroundColor: Theme.of(context).colorScheme.background, // Reverted to Theme
       body: SingleChildScrollView(
+        padding: const EdgeInsets.only(bottom: 100), // Space for Navbar
         child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  _buildProfileAvatar(context), 
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Agus Tani Makmur', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 6),
-                        Text('ID: 12345 | Lokasi: Bandungan', style: TextStyle(fontSize: 14, color: Colors.grey.shade700)),
-                        const SizedBox(height: 6),
-                        Text('Menjual wortel dan sayuran organik. Aktif sejak 2020.', 
-                             style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Theme.of(context).colorScheme.primary), 
-                             maxLines: 2, 
-                             overflow: TextOverflow.ellipsis),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            _buildProfileMenuItem(
-            context,
-            icon: Icons.edit_note,
-            title: 'Edit Profil & Verifikasi Bio',
-            subtitle: 'Perbarui foto, informasi kontak (WA/IG/FB) dan lokasi Anda.',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const EditProfileScreen()),
-              );
-            },
-          ),
+           crossAxisAlignment: CrossAxisAlignment.stretch,
+           children: [
+             // 1. AESTHETIC HEADER
+             Container(
+               padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
+               decoration: BoxDecoration(
+                 color: Colors.white,
+                 borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
+                 boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 15, offset: Offset(0, 5))],
+               ),
+               child: Column(
+                 children: [
+                   // Avatar with Status Badge
+                   Stack(
+                     children: [
+                       Container(
+                         padding: const EdgeInsets.all(4),
+                         decoration: BoxDecoration(
+                           shape: BoxShape.circle,
+                           border: Border.all(color: _isVerified ? Colors.blue : Colors.green, width: 3),
+                         ),
+                         child: const CircleAvatar(
+                           radius: 50,
+                           backgroundImage: NetworkImage("https://cdn-icons-png.flaticon.com/512/3135/3135715.png"), // Placeholder Avatar
+                           backgroundColor: Color(0xFFE8F5E9),
+                         ),
+                       ),
+                       if (_isVerified)
+                         Positioned(
+                           bottom: 0, right: 0,
+                           child: Container(
+                             padding: const EdgeInsets.all(6),
+                             decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)]),
+                             child: const Icon(Icons.verified, color: Colors.white, size: 20),
+                           ),
+                         ),
+                     ],
+                   ),
+                   const SizedBox(height: 16),
+                   
+                   // Name & Creative Bio
+                   const Text("Agus Tani Makmur", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20))),
+                   const SizedBox(height: 4),
+                   Text("Petani Sayur Organik • Sejak 2018", style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w500)),
+                   const SizedBox(height: 8),
+                   Container(
+                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                     decoration: BoxDecoration(color: const Color(0xFFF1F8E9), borderRadius: BorderRadius.circular(20)),
+                     child: Text(
+                       '"Menanam dengan hati, memanen br/kualitas."',
+                       style: TextStyle(fontStyle: FontStyle.italic, color: Colors.green.shade800, fontSize: 12),
+                       textAlign: TextAlign.center,
+                     ),
+                   ),
+                 ],
+               ),
+             ),
 
-            _buildProfileMenuItem(
-              context,
-              icon: Icons.settings,
-              title: 'Pengaturan Aplikasi',
-              subtitle: 'Atur notifikasi lelang, preferensi wilayah, dan privasi.',
-              onTap: () {ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Halaman Pengaturan'), backgroundColor: Theme.of(context).colorScheme.primary,));}
-            ),
-            _buildProfileMenuItem(
-              context,
-              icon: Icons.history,
-              title: 'Riwayat Penawaran & Transaksi',
-              subtitle: 'Lihat daftar lelang/tawaran yang berhasil dan gagal.',
-              onTap: () {ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Halaman Riwayat'), backgroundColor: Theme.of(context).colorScheme.primary,));}
-            ),
-            _buildProfileMenuItem(
-              context,
-              icon: Icons.help_outline,
-              title: 'Bantuan & Dukungan',
-              onTap: () {ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Halaman Bantuan'), backgroundColor: Theme.of(context).colorScheme.primary,));}
-            ),
-            _buildProfileMenuItem(
-              context,
-              icon: Icons.info_outline,
-              title: 'Tentang Aplikasi',
-              onTap: () {ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Halaman Tentang Aplikasi'), backgroundColor: Theme.of(context).colorScheme.primary,));}
-            ),
-            const SizedBox(height: 20),
-          ],
+             const SizedBox(height: 20),
+
+             // 2. VERIFICATION STATUS BOX
+             Padding(
+               padding: const EdgeInsets.symmetric(horizontal: 20),
+               child: Container(
+                 padding: const EdgeInsets.all(16),
+                 decoration: BoxDecoration(
+                   gradient: LinearGradient(colors: _isVerified ? [Colors.blue.shade50, Colors.blue.shade100] : [Colors.orange.shade50, Colors.orange.shade100]),
+                   borderRadius: BorderRadius.circular(16),
+                   border: Border.all(color: _isVerified ? Colors.blue.shade200 : Colors.orange.shade200),
+                 ),
+                 child: Row(
+                   children: [
+                     Icon(_isVerified ? Icons.verified_user : Icons.gpp_maybe_rounded, color: _isVerified ? Colors.blue.shade700 : Colors.orange.shade800, size: 36),
+                     const SizedBox(width: 16),
+                     Expanded(
+                       child: Column(
+                         crossAxisAlignment: CrossAxisAlignment.start,
+                         children: [
+                           Text(
+                             _isVerified ? "Akun Terverifikasi" : "Belum Terverifikasi",
+                             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: _isVerified ? Colors.blue.shade900 : Colors.orange.shade900),
+                           ),
+                           const SizedBox(height: 4),
+                           Text(
+                             _isVerified ? "Anda adalah penjual terpercaya." : "Ajukan verifikasi untuk meningkatkan kepercayaan.",
+                             style: TextStyle(fontSize: 12, color: _isVerified ? Colors.blue.shade800 : Colors.orange.shade900),
+                           ),
+                         ],
+                       ),
+                     ),
+                     if (!_isVerified)
+                       InkWell(
+                         onTap: () {
+                            showDialog(context: context, builder: (ctx) => AlertDialog(
+                              title: const Text("Manfaat Verifikasi"),
+                              content: const Text("✅ Tanda Centang Biru\n✅ Prioritas Listing\n✅ Kepercayaan Meningkat\n✅ Proteksi Akun"),
+                              actions: [TextButton(onPressed: ()=>Navigator.pop(ctx), child: const Text("OK"))],
+                            ));
+                         },
+                         child: const Icon(Icons.info_outline, color: Colors.orange),
+                       )
+                   ],
+                 ),
+               ),
+             ),
+             
+             const SizedBox(height: 20),
+             Padding(
+               padding: const EdgeInsets.symmetric(horizontal: 20),
+               child: Text("MENU AKUN", style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1)),
+             ),
+             const SizedBox(height: 8),
+
+             // 3. MENU ITEMS
+             _buildMenuCard(
+               icon: Icons.person_outline,
+               title: "Edit Profil",
+               subtitle: "Ubah foto, nama, slogan, dan biodata",
+               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EditProfileScreen(isBuyer: widget.isBuyer))),
+             ),
+
+             _buildMenuCard(
+               icon: Icons.verified_outlined, 
+               title: "Ajukan Verifikasi",
+               subtitle: "Upload KTP & Data Diri",
+               iconColor: Colors.blue,
+               onTap: () async {
+                 final result = await Navigator.push(context, MaterialPageRoute(builder: (_) => const VerificationFormScreen()));
+                 if (result == true) {
+                   setState(() { });
+                 }
+               },
+             ),
+
+             // REMOVED "Alamat & Lokasi" as requested
+
+             const SizedBox(height: 10),
+             Padding(
+               padding: const EdgeInsets.symmetric(horizontal: 20),
+               child: Text("LAINNYA", style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1)),
+             ),
+             const SizedBox(height: 8),
+
+             _buildMenuCard(
+               icon: Icons.settings_outlined,
+               title: "Pengaturan Aplikasi",
+               onTap: () {},
+             ),
+             
+             _buildMenuCard(
+               icon: Icons.help_outline,
+               title: "Pusat Bantuan",
+               onTap: () {},
+             ),
+
+             _buildMenuCard(
+               icon: Icons.logout,
+               title: "Log Out",
+               isDestructive: true,
+               onTap: _handleLogout,
+             ),
+           ],
         ),
       ),
     );
   }
 
-  Widget _buildProfileMenuItem(BuildContext context, {required IconData icon, required String title, String? subtitle, required VoidCallback onTap}) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      elevation: 4,
-      child: ListTile(
-        leading: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 28),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-        subtitle: subtitle != null ? Text(subtitle, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)) : null,
-        trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-        onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  // UPDATED WITH LAYERED SHADOW ARCHITECTURE (Shadow + Stroke)
+  Widget _buildMenuCard({
+    required IconData icon, 
+    required String title, 
+    String? subtitle, 
+    required VoidCallback onTap,
+    Color? iconColor,
+    bool isDestructive = false
+  }) {
+    return Container(
+      // 1. Shadow Layer (Outer)
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          // Shadow 1: Darker, tighter (Deep depth)
+          BoxShadow(
+            color: Colors.black.withOpacity(0.20), 
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+            spreadRadius: 0, 
+          ),
+          // Shadow 2: Softer, wider (Ambient)
+          BoxShadow(
+            color: Colors.black.withOpacity(0.12), 
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+            spreadRadius: 2, 
+          ),
+        ],
+      ),
+      // 2. Stroke & Content Layer (Inner)
+      child: Material(
+        color: Colors.white,
+        clipBehavior: Clip.antiAlias,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.grey.shade300, width: 2.0), // THICK STROKE
+        ),
+        child: InkWell(
+          onTap: onTap,
+          splashColor: (isDestructive ? Colors.red : Colors.green).withOpacity(0.1),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: (isDestructive ? Colors.red : (iconColor ?? const Color(0xFF1B5E20))).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: isDestructive ? Colors.red : (iconColor ?? const Color(0xFF1B5E20)), size: 22),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDestructive ? Colors.red : Colors.black87)),
+                      if (subtitle != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(subtitle, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                        ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: Colors.grey.shade400),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 }
+

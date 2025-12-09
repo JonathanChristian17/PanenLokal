@@ -7,6 +7,7 @@ import 'request_screen.dart';
 import 'notification_screen.dart';
 import 'market_screen.dart'; 
 
+
 // Definisi model CommodityPost (Updated with all requested fields)
 class CommodityPost {
   final String commodity;
@@ -850,7 +851,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
     );
 
     // 4. PROFIL
-    final Widget profilContent = const ProfileScreen(isBuyer: true);
+    final Widget profilContent = ProfileScreen();
 
     final List<Widget> pages = [berandaContent, pasarContent, favoritContent, profilContent];
 

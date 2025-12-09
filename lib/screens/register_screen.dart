@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
+import '../models/user_model.dart';
 import 'buyer_home_screen.dart';
-import 'farmer_home_screen.dart';
 import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
-  final String role; 
-  const RegisterScreen({super.key, required this.role});
+  const RegisterScreen({super.key});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -14,40 +14,59 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController = TextEditingController();
 
-  void _register() {
+  bool loading = false;
+
+  Future<void> _register() async {
     final name = nameController.text.trim();
     final email = emailController.text.trim();
+    final phone = phoneController.text.trim();
     final password = passwordController.text.trim();
     final confirmPassword = confirmPasswordController.text.trim();
 
-    if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: const Text('Semua field harus diisi'), backgroundColor: Theme.of(context).colorScheme.error,),
-      );
+    if (name.isEmpty || email.isEmpty || phone.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+      _showMsg("Semua field harus diisi!", true);
       return;
     }
 
     if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: const Text('Password tidak cocok'), backgroundColor: Theme.of(context).colorScheme.error,),
-      );
+      _showMsg("Password tidak cocok!", true);
       return;
     }
-    
-    Widget nextScreen;
-    if (widget.role == 'pembeli') {
-      nextScreen = const BuyerHomeScreen(title: 'Beranda Pembeli');
-    } else {
-      nextScreen = const FarmerHomeScreen(title: 'Lapak Saya');
-    }
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => nextScreen,
+    setState(() => loading = true);
+
+    UserModel? user = await AuthService.register(
+      name: name,
+      email: email,
+      phone: phone,
+      password: password,
+    );
+
+    setState(() => loading = false);
+
+    if (user != null) {
+      _showMsg("Register Berhasil!");
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BuyerHomeScreen(title: "Beranda Pembeli"),
+        ),
+      );
+    } else {
+      _showMsg("Register gagal, cek kembali data Anda!", true);
+    }
+  }
+
+  void _showMsg(String msg, [bool error = false]) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor:
+            error ? Colors.red : Colors.green,
       ),
     );
   }
@@ -57,102 +76,80 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
-        title: Text('Daftar Akun ${widget.role == 'pembeli' ? 'Pembeli' : 'Petani'}'),
+        title: const Text('Daftar Akun Baru'),
         backgroundColor: Theme.of(context).colorScheme.background,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new, color: Theme.of(context).colorScheme.onBackground),
-          onPressed: () => Navigator.pop(context), // Kembali ke LoginScreen
+          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24),
         child: Center(
           child: SingleChildScrollView(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  widget.role == 'pembeli' ? Icons.person_add_alt_1_outlined : Icons.nature_people_outlined,
-                  size: 80,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+
+                Image.asset('assets/images/panenlokal_logo.png', height: 100),
                 const SizedBox(height: 20),
-                Text(
-                  'Daftar sebagai ${widget.role == 'pembeli' ? 'Pembeli' : 'Petani'}',
-                  style: TextStyle(
-                    fontSize: 28, 
-                    fontWeight: FontWeight.bold, 
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(height: 30),
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nama Lengkap',
-                    prefixIcon: Icon(Icons.person),
-                    hintText: 'Cth: Budi Santoso',
-                  ),
-                ),
+
+                _input("Nama Lengkap", Icons.person, nameController),
                 const SizedBox(height: 15),
-                TextField(
-                  controller: emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email),
-                    hintText: 'Cth: email@contoh.com',
-                  ),
-                ),
+                _input("Email", Icons.email, emailController),
                 const SizedBox(height: 15),
-                TextField(
-                  controller: passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: Icon(Icons.lock),
-                    hintText: 'Min. 8 karakter',
-                  ),
-                ),
+                _input("Nomor HP", Icons.phone, phoneController, type: TextInputType.phone),
                 const SizedBox(height: 15),
-                TextField(
-                  controller: confirmPasswordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Konfirmasi Password',
-                    prefixIcon: Icon(Icons.lock_outline),
-                    hintText: 'Ulangi password',
-                  ),
-                ),
+                _input("Password", Icons.lock, passwordController, hidden: true),
+                const SizedBox(height: 15),
+                _input("Konfirmasi Password", Icons.lock_outline, confirmPasswordController, hidden: true),
                 const SizedBox(height: 25),
+
                 SizedBox(
                   width: double.infinity,
                   height: 55,
                   child: FilledButton(
-                    onPressed: _register,
-                    child: const Text(
-                      'Daftar',
-                      style: TextStyle(fontSize: 18),
-                    ),
+                    onPressed: loading ? null : _register,
+                    child: loading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text("Daftar Sekarang", style: TextStyle(fontSize: 18)),
                   ),
                 ),
+
                 const SizedBox(height: 20),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => LoginScreen(role: widget.role)),
-                    );
-                  },
-                  child: const Text(
-                    'Sudah punya akun? Login di sini',
-                    style: TextStyle(color: Colors.blueAccent),
-                  ),
-                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("Sudah punya akun? "),
+                    GestureDetector(
+                      onTap: () => Navigator.pushReplacement(context,
+                        MaterialPageRoute(builder: (_) => const LoginScreen())),
+                      child: Text("Login",
+                        style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+                      ),
+                    )
+                  ],
+                )
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _input(String label, IconData icon, TextEditingController c,
+      {bool hidden = false, TextInputType type = TextInputType.text}) {
+    return TextField(
+      controller: c,
+      obscureText: hidden,
+      keyboardType: type,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

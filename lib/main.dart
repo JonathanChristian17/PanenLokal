@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
-import 'screens/pilihan_peran_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/splash_screen.dart';
 
-void main() {
+import 'package:intl/date_symbol_data_local.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('id_ID', null);
   runApp(const MyApp());
 }
 
@@ -13,24 +18,22 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Panen Lokal',
       theme: ThemeData(
-        // 🎨 Color Scheme yang Diperbarui
         colorScheme: ColorScheme.fromSwatch(
           primarySwatch: Colors.green,
         ).copyWith(
-          primary: const Color(0xFF2E7D32), // Hijau Lebih Kaya
+          primary: const Color(0xFF2E7D32),
           onPrimary: Colors.white,
-          secondary: const Color(0xFFFBC02D), // Kuning Emas Lembut (Aksen)
+          secondary: const Color(0xFFFBC02D),
           onSecondary: Colors.black87,
           surface: Colors.white,
           onSurface: Colors.black,
-          background: const Color(0xFFF9FBE7), // Latar Belakang Krem Sangat Muda
+          background: const Color(0xFFF9FBE7),
           onBackground: Colors.black87,
           error: Colors.red,
           onError: Colors.white,
         ),
         useMaterial3: true,
         
-        // Properti umum untuk tombol (Menggunakan const aman)
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF2E7D32),
@@ -66,8 +69,6 @@ class MyApp extends StatelessWidget {
           ),
         ),
 
-        // cardTheme dihapus untuk menghindari error.
-        
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(borderRadius: const BorderRadius.all(Radius.circular(10)), borderSide: BorderSide.none),
           filled: true,
@@ -84,89 +85,8 @@ class MyApp extends StatelessWidget {
         ),
       ),
       debugShowCheckedModeBanner: false, 
-      home: const MySplashScreen(), 
+      home: const SplashScreen(), 
     );
   }
 }
 
-// Implementasi Splash Screen (Logo Panen Lokal)
-class MySplashScreen extends StatefulWidget {
-  const MySplashScreen({super.key});
-
-  @override
-  State<MySplashScreen> createState() => _MySplashScreenState();
-}
-
-class _MySplashScreenState extends State<MySplashScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500), 
-    );
-    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
-
-    _controller.forward();
-
-    Future.delayed(const Duration(seconds: 2), () { 
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const PilihanPeranScreen()),
-      );
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.secondary.withOpacity(0.8)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Center(
-          child: ScaleTransition(
-            scale: _animation,
-            child: FadeTransition(
-              opacity: _animation,
-              child: Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 15,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: const Image(
-                  image: AssetImage('assets/images/panenlokal.png'), 
-                  width: 200, 
-                  height: 200,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

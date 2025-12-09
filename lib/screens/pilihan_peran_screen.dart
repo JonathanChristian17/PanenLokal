@@ -1,8 +1,34 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart'; 
+import 'buyer_home_screen.dart'; 
+import 'farmer_home_screen.dart'; 
 
 class PilihanPeranScreen extends StatelessWidget {
   const PilihanPeranScreen({super.key});
+
+  void _showConfirmationDialog(BuildContext context, String role, VoidCallback onConfirm) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Konfirmasi Peran'),
+          content: Text('Apakah kamu ingin menjadi "$role"?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(), 
+              child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(context).pop(); 
+                onConfirm(); 
+              },
+              child: const Text('Ya, Lanjutkan'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,13 +46,13 @@ class PilihanPeranScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Image(
-                image: AssetImage('assets/images/panenlokal.png'), 
+                image: AssetImage('assets/images/panenlokal_logo.png'), 
                 width: 150, 
                 height: 150,
               ),
               const SizedBox(height: 20),
               Text(
-                'Selamat Datang di Panen Lokal!',
+                'Selamat Datang!',
                 style: TextStyle(
                   fontSize: 24, 
                   fontWeight: FontWeight.bold, 
@@ -36,7 +62,7 @@ class PilihanPeranScreen extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                'Pilih peran Anda untuk melanjutkan:',
+                'Pilih peran Anda untuk mulai bertransaksi:',
                 style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
                 textAlign: TextAlign.center,
               ),
@@ -45,10 +71,12 @@ class PilihanPeranScreen extends StatelessWidget {
                 icon: Icons.shopping_basket,
                 label: 'Saya Pembeli',
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => LoginScreen(role: 'pembeli')),
-                  );
+                  _showConfirmationDialog(context, 'Pembeli', () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const BuyerHomeScreen(title: 'Beranda Pembeli')),
+                    );
+                  });
                 },
               ),
               const SizedBox(height: 20),
@@ -56,10 +84,12 @@ class PilihanPeranScreen extends StatelessWidget {
                 icon: Icons.agriculture,
                 label: 'Saya Petani',
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => LoginScreen(role: 'petani')),
-                  );
+                  _showConfirmationDialog(context, 'Petani', () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const FarmerHomeScreen(title: 'Lapak Saya')),
+                    );
+                  });
                 },
               ),
             ],
@@ -70,7 +100,6 @@ class PilihanPeranScreen extends StatelessWidget {
   }
 }
 
-// Widget bantu untuk tombol pilihan peran
 class _RoleSelectionButton extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -95,8 +124,9 @@ class _RoleSelectionButton extends StatelessWidget {
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          elevation: 8, // Tambah elevasi
+          elevation: 8, 
           shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.4),
         ),
       ),

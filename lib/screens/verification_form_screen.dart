@@ -94,20 +94,29 @@ class _VerificationFormScreenState extends State<VerificationFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
-      appBar: AppBar(
-        title: const Text("Form Verifikasi", style: TextStyle(color: Color(0xFF1B5E20), fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        leading: BackButton(color: Colors.black),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Custom Scrollable Header
+                Row(
+                  children: [
+                     const BackButton(color: Colors.black),
+                     const Expanded(
+                       child: Text(
+                         "Form Verifikasi",
+                         textAlign: TextAlign.center,
+                         style: TextStyle(fontSize: 20, color: Color(0xFF1B5E20), fontWeight: FontWeight.bold),
+                       ),
+                     ),
+                     const SizedBox(width: 48), // Balance BackButton
+                  ],
+                ),
+                const SizedBox(height: 24),
               // Info Box
               Container(
                 padding: const EdgeInsets.all(16),
@@ -205,6 +214,7 @@ class _VerificationFormScreenState extends State<VerificationFormScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

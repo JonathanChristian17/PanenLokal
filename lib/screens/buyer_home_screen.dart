@@ -47,6 +47,10 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
   final TextEditingController _searchController = TextEditingController();
   final Set<String> _favoriteIds = {}; 
 
+  // State for Review Flow
+  bool _waitingForReview = false;
+  CommodityPost? _pendingReviewPost;
+
   // Format Currency
   String _formatCurrency(num value) {
     return value.toString().replaceAllMapped(
@@ -169,7 +173,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
       ),
     );
   }
-  
+
   // --- CARD 2: HORIZONTAL LISTING CARD (Enhanced Stroke & Shadow) ---
   Widget _buildHorizontalCommodityCard(BuildContext context, CommodityPost post) {
     bool isFav = _favoriteIds.contains(post.commodity);
@@ -182,6 +186,12 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
             post: post, 
              isFavorite: isFav,
              onToggleFavorite: () => _toggleFavorite(post.commodity),
+             onContacted: () {
+                 setState(() {
+                   _waitingForReview = true;
+                   _pendingReviewPost = post;
+                 });
+             },
           )),
         );
       },
@@ -370,8 +380,234 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
               onTap: () {
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Membuka WhatsApp..."), backgroundColor: Colors.green));
+                
+                // Trigger Review Flow
+                setState(() {
+                  _waitingForReview = true;
+                  _pendingReviewPost = post;
+                });
               },
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- REVIEW FLOW ---
+  void _showReviewDialog(CommodityPost post) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        String? dealStatus; // "success", "cancelled", "pending"
+        double rating = 5.0;
+        TextEditingController reviewController = TextEditingController();
+        
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              contentPadding: const EdgeInsets.all(20),
+              title: const Text("Bagaimana hasil negosiasi?", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (dealStatus == null) ...[
+                      const Text("Bantu pengguna lain dengan ulasanmu!", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 13)),
+                      const SizedBox(height: 20),
+                      _buildReviewOption("Deal Berhasil", Icons.check_circle, Colors.green, () {
+                        setStateDialog(() => dealStatus = "success");
+                      }),
+                      _buildReviewOption("Tidak Jadi", Icons.cancel, Colors.red, () {
+                        setStateDialog(() => dealStatus = "cancelled");
+                      }),
+                      _buildReviewOption("Masih Menunggu", Icons.access_time_filled, Colors.orange, () {
+                        setStateDialog(() => dealStatus = "pending");
+                      }),
+                    ] else if (dealStatus == "success") ...[
+                      const Icon(Icons.check_circle, size: 60, color: Colors.green),
+                      const SizedBox(height: 10),
+                      const Text("Selamat! Transaksi Berhasil", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      const SizedBox(height: 20),
+                      const Text("Beri Bintang untuk Penjual:", style: TextStyle(fontWeight: FontWeight.bold)),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(5, (index) {
+                          return IconButton(
+                            icon: Icon(
+                              index < rating ? Icons.star : Icons.star_border,
+                              color: Colors.amber,
+                              size: 32,
+                            ),
+                            onPressed: () {
+                              setStateDialog(() => rating = index + 1.0);
+                            },
+                          );
+                        }),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: reviewController,
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          hintText: "Tulis ulasan pengalamanmu...",
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          filled: true,
+                          fillColor: Colors.grey.shade50,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            _handleSubmitReview(post, rating, reviewController.text);
+                          },
+                          child: const Text("Kirim Ulasan", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ),
+                      )
+                    ] else ...[
+                       // Cancelled or Pending
+                       Icon(dealStatus == "cancelled" ? Icons.cancel : Icons.access_time_filled, 
+                            size: 60, 
+                            color: dealStatus == "cancelled" ? Colors.red : Colors.orange),
+                       const SizedBox(height: 16),
+                       Text(
+                         dealStatus == "cancelled" ? "Transaksi Dibatalkan" : "Menunggu Konfirmasi",
+                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                         dealStatus == "cancelled" ? "Terima kasih atas informasinya." : "Semoga segera ada kabar baik!",
+                         textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            // Clear state
+                            setState(() {
+                              _waitingForReview = false;
+                              _pendingReviewPost = null;
+                            });
+                          },
+                          child: const Text("Tutup", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ),
+                      )
+                    ]
+                  ],
+                ),
+              ),
+            );
+          }
+        );
+      }
+    );
+  }
+
+  Widget _buildReviewOption(String label, IconData icon, Color color, VoidCallback onTap) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withOpacity(0.3)),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: color),
+              const SizedBox(width: 12),
+              Text(label, style: TextStyle(fontWeight: FontWeight.bold, color: color.withOpacity(0.8), fontSize: 16)),
+              const Spacer(),
+              Icon(Icons.arrow_forward_ios, size: 16, color: color.withOpacity(0.5)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _handleSubmitReview(CommodityPost post, double rating, String review) {
+    setState(() {
+      _waitingForReview = false;
+      _pendingReviewPost = null;
+    });
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.check_circle_outline, size: 60, color: Colors.green),
+        title: const Text("Ulasan Terkirim!"),
+        content: const Text("Terima kasih telah membantu komunitas PanenLokal."),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("OK"))]
+      ),
+    );
+  }
+
+  // --- REVIEW CARD WIDGET ---
+  Widget _buildPendingReviewCard() {
+    if (!_waitingForReview || _pendingReviewPost == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(colors: [Color(0xFFFFF3E0), Color(0xFFFFE0B2)]),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.orange.shade300),
+          boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4))],
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.rate_review, color: Colors.orange, size: 28),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Gimana negosiasinya?", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.brown)),
+                      Text("Berikan ulasan untuk membantu yang lain!", style: TextStyle(fontSize: 12, color: Colors.black54)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                onPressed: () => _showReviewDialog(_pendingReviewPost!),
+                child: const Text("Beri Ulasan Sekarang"),
+              ),
+            )
           ],
         ),
       ),
@@ -424,7 +660,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
                                  crossAxisAlignment: CrossAxisAlignment.start,
                                  children: [
                                    Text('PanenLokal.', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey.shade500, letterSpacing: 0.5)),
-                                   Text('Halo, Pembeli!', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.primary, letterSpacing: 0.5)),
+                                   Text('Halo, User!', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.primary, letterSpacing: 0.5)),
                                  ],
                                ),
                              )
@@ -484,8 +720,11 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
                      ),
                    ),
 
+                   // PENDING REVIEW CARD
+                   _buildPendingReviewCard(),
+                   
                    Padding(
-                     padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                     padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
                      child: Row(
                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                        children: [
@@ -709,8 +948,9 @@ class ListingDetailScreen extends StatefulWidget {
   final CommodityPost post;
   final bool isFavorite;
   final VoidCallback? onToggleFavorite;
+  final VoidCallback? onContacted; // Callback to trigger review on Home
 
-  const ListingDetailScreen({super.key, required this.post, this.isFavorite = false, this.onToggleFavorite});
+  const ListingDetailScreen({super.key, required this.post, this.isFavorite = false, this.onToggleFavorite, this.onContacted});
 
   @override
   State<ListingDetailScreen> createState() => _ListingDetailScreenState();
@@ -718,6 +958,10 @@ class ListingDetailScreen extends StatefulWidget {
 
 class _ListingDetailScreenState extends State<ListingDetailScreen> {
   late bool _isFav;
+
+  // State for Review Flow
+  bool _waitingForReview = false;
+  CommodityPost? _pendingReviewPost;
 
   @override
   void initState() {
@@ -750,6 +994,10 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
             onPressed: () { 
                Navigator.pop(ctx);
                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Membuka WhatsApp..."), backgroundColor: Colors.green));
+               // Trigger Callback
+               if (widget.onContacted != null) {
+                 widget.onContacted!();
+               }
             }, 
             child: const Text("Lanjut")
           ),

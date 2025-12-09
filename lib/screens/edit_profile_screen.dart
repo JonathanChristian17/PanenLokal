@@ -108,34 +108,44 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
-      appBar: AppBar(
-        title: Text(widget.isBuyer ? "Edit Profil" : "Edit Profil Petani", style: const TextStyle(color: Color(0xFF1B5E20), fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.black,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            // Avatar Section
-            Center(
-              child: Stack(
-                alignment: Alignment.bottomRight,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              // Custom Scrollable Header
+              Row(
                 children: [
-                   Container(
-                     padding: const EdgeInsets.all(4),
-                     decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.green, width: 2)),
-                     child: CircleAvatar(
-                      radius: 60,
-                      backgroundColor: Colors.green.shade50,
-                      backgroundImage: _image != null ? FileImage(_image!) : null,
-                      child: _image == null
-                          ? Icon(Icons.person, size: 60, color: Colors.green.shade200)
-                          : null,
-                                       ),
+                   const BackButton(color: Colors.black),
+                   Expanded(
+                     child: Text(
+                       widget.isBuyer ? "Edit Profil" : "Edit Profil Petani",
+                       textAlign: TextAlign.center,
+                       style: const TextStyle(fontSize: 20, color: Color(0xFF1B5E20), fontWeight: FontWeight.bold),
+                     ),
                    ),
+                   const SizedBox(width: 48), // Balance BackButton
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Avatar Section
+              Center(
+                child: Stack(
+                  alignment: Alignment.bottomRight,
+                  children: [
+                     Container(
+                       padding: const EdgeInsets.all(4),
+                       decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.green, width: 2)),
+                       child: CircleAvatar(
+                        radius: 60,
+                        backgroundColor: Colors.green.shade50,
+                        backgroundImage: _image != null ? FileImage(_image!) : null,
+                        child: _image == null
+                            ? Icon(Icons.person, size: 60, color: Colors.green.shade200)
+                            : null,
+                                         ),
+                     ),
                   GestureDetector(
                     onTap: pickImage,
                     child: Container(
@@ -234,6 +244,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             const SizedBox(height: 15),
           ],
         ),
+      ),
       ),
     );
   }

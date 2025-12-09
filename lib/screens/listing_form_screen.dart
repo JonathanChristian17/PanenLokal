@@ -14,16 +14,8 @@ class ListingFormScreen extends StatefulWidget {
 class _ListingFormScreenState extends State<ListingFormScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // 1. Commodity Dropdown
-  final List<String> commodityOptions = [
-    "Ercis Berastagi", "Brokoli", "Buncis", "Cabai Hijau", "Cabai Merah",
-    "Cabai Rawit Kasar", "Cabai Rawit Kecil", "Daun Sop / Seledri", "Daun Prey",
-    "Jagung Manis", "Kentang Kuning", "Kentang Merah", "Kol / Kubis",
-    "Kol Bunga", "Labu / Jambe", "Sayur Pahit", "Sayur Putih", 
-    "Terong Antaboga", "Tomat", "Wortel Karo", "Jipang Besar", 
-    "Anak Jipang", "Selada", "Sayur Botol", "Terong Belanda"
-  ];
-  String? _selectedCommodity;
+  // 1. Commodity Controller (Replaced Dropdown)
+  final TextEditingController _commodityController = TextEditingController();
 
   // 2. Location & Area
   final TextEditingController _locationController = TextEditingController();
@@ -80,7 +72,7 @@ class _ListingFormScreenState extends State<ListingFormScreen> {
 
     final newPost = CommodityPost(
       id: DateTime.now().millisecondsSinceEpoch.toString(), // Generate simplified ID
-      commodity: _selectedCommodity!,
+      commodity: _commodityController.text,
       location: _locationController.text,
       area: "${_areaController.text.replaceAll('.', '')} m²",
       price: finalPriceKg, // This variable holds the calculated price
@@ -157,14 +149,10 @@ class _ListingFormScreenState extends State<ListingFormScreen> {
                       // 1. Commodity Type
                       _buildSectionLabel("Jenis Tanaman"),
                       _buildShadowedInput(
-                        child: DropdownButtonFormField<String>(
-                          decoration: _inputDecoration(icon: Icons.grass_rounded, hint: "Pilih Komoditas"),
-                          value: _selectedCommodity,
-                          items: commodityOptions.map((String val) {
-                            return DropdownMenuItem(value: val, child: Text(val, style: const TextStyle(fontWeight: FontWeight.w600)));
-                          }).toList(),
-                          onChanged: (val) => setState(() => _selectedCommodity = val),
-                           validator: (val) => val == null ? "Wajib dipilih" : null,
+                        child: TextFormField(
+                          controller: _commodityController,
+                          decoration: _inputDecoration(icon: Icons.grass_rounded, hint: "Contoh: Cabai Merah"),
+                          validator: (val) => val!.isEmpty ? "Wajib diisi" : null,
                         ),
                       ),
 

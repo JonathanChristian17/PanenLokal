@@ -32,7 +32,13 @@ class CommodityPost {
     this.type = "Timbang", // Default
     this.isSold = false,
     this.soldPrice,
+    this.rating,      // New Field
+    this.reviewText,  // New Field
   });
+  
+  // Rating Properties
+  final double? rating;
+  final String? reviewText;
 }
 
 class FarmerHomeScreen extends StatefulWidget {
@@ -68,8 +74,12 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
       price: 75000000, // Borongan
       contactName: 'Agus Sutanto',
       contactInfo: 'WA: 0812xxxx',
-      quantityTons: 8.0,
+      quantityTons: 10.0,
       type: "Borong",
+      isSold: true, // Mock as sold for history view
+      soldPrice: 70000000,
+      rating: 5.0,
+      reviewText: "Deal cepat, barang mantap.",
     ),
   ];
 
@@ -385,206 +395,232 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                   itemCount: displayPosts.length,
                   itemBuilder: (context, index) {
                     final post = displayPosts[index];
-                    return Container(
-                      // 1. Layer Shadow: Outer Container with Margin
-                      margin: const EdgeInsets.only(bottom: 20),
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.20), 
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                            spreadRadius: 0,
+                    return Stack(
+                      children: [
+                        Container(
+                          // 1. Layer Shadow: Outer Container with Margin
+                          margin: const EdgeInsets.only(bottom: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.20), 
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                                spreadRadius: 0,
+                              ),
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.12),
+                                blurRadius: 15,
+                                offset: const Offset(0, 8),
+                                spreadRadius: 2, 
+                              ),
+                            ],
                           ),
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.12),
-                            blurRadius: 15,
-                            offset: const Offset(0, 8),
-                            spreadRadius: 2, 
-                          ),
-                        ],
-                      ),
-                      // 2. Inner Content Layer with Stroke & Clip
-                      child: Material(
-                        color: Colors.white,
-                        elevation: 0,
-                        clipBehavior: Clip.antiAlias,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          side: BorderSide(color: Colors.grey.shade300, width: 2.0),
-                        ),
-                        child: Column(
-                        children: [
-                          // Header (Colored Strip)
-                          Container(
-                            padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
-                            decoration: BoxDecoration(
-                              color: post.type == "Borong" ? Colors.green.shade50 : Colors.orange.shade50,
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(19)),
-                              border: Border(bottom: BorderSide(color: post.type == "Borong" ? Colors.green.withOpacity(0.2) : Colors.orange.withOpacity(0.2)))
+                          // 2. Inner Content Layer with Stroke & Clip
+                          child: Material(
+                            color: Colors.white,
+                            elevation: 0,
+                            clipBehavior: Clip.antiAlias,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              side: BorderSide(color: Colors.grey.shade300, width: 2.0),
                             ),
-                            child: Row(
+                            child: Column(
                               children: [
-                                // Tag Type
+                                // Header (Colored Strip)
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
                                   decoration: BoxDecoration(
-                                    color: post.type == "Borong" ? const Color(0xFF1B5E20) : Colors.deepOrange,
-                                    borderRadius: BorderRadius.circular(8),
-                                    boxShadow: [BoxShadow(color: (post.type == "Borong" ? Colors.green : Colors.orange).withOpacity(0.3), blurRadius: 6, offset: const Offset(0, 3))]
-                                  ),
-                                  child: Text(post.type.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                                ),
-                                const Spacer(),
-                                
-                                // Grouped Action Buttons
-                                 if (_showHistory)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                    decoration: BoxDecoration(color: Colors.grey.shade700, borderRadius: BorderRadius.circular(8)),
-                                    child: const Text("TERJUAL", style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                                  )
-                                else 
-                                  Row(
-                                    children: [
-                                      // Update Price
-                                      if (post.type == "Borong") ...[
-                                          InkWell(
-                                            onTap: () => _updateOfferPrice(post),
-                                            child: Container(
-                                              width: 36, height: 36,
-                                              decoration: BoxDecoration(
-                                                color: Colors.white,
-                                                borderRadius: BorderRadius.circular(10),
-                                                boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))]
-                                              ),
-                                              child: const Icon(Icons.price_check, size: 18, color: Colors.green),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                      ],
-                                      
-                                      // Edit Action
-                                      InkWell(
-                                        onTap: () => _editListing(post),
-                                        child: Container(
-                                          width: 36, height: 36,
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius: BorderRadius.circular(10),
-                                            boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))]
-                                          ),
-                                          child: const Icon(Icons.edit, size: 18, color: Colors.blue),
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                              ],
-                            ),
-                          ),
-                          
-                          // Body Content
-                          Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Image
-                                Container(
-                                  width: 90, height: 90,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade100,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: Colors.grey.shade200),
-                                    image: const DecorationImage(
-                                      image: NetworkImage("https://via.placeholder.com/150"), 
-                                      fit: BoxFit.cover,
-                                      opacity: 0.8
-                                    ),
-                                  ),
-                                  child: Center(
-                                    child: Icon(Icons.add_a_photo, color: Colors.grey.shade400, size: 30),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                
-                                // Details
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(post.commodity, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color(0xFF212121))),
-                                      const SizedBox(height: 6),
-                                      
-                                      // Attributes
-                                      Row(
-                                        children: [
-                                          Icon(Icons.scale, size: 14, color: Colors.grey.shade600),
-                                          const SizedBox(width: 4),
-                                          Text("${post.quantityTons} Ton", style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
-                                          const SizedBox(width: 12),
-                                          Icon(Icons.aspect_ratio, size: 14, color: Colors.grey.shade600),
-                                          const SizedBox(width: 4),
-                                          Text(post.area, style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
-                                        ],
-                                      ),
-                                      
-                                      const SizedBox(height: 12),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFF1F8E9),
-                                          borderRadius: BorderRadius.circular(6)
-                                        ),
-                                        child: Text(
-                                          _showHistory 
-                                            ? "Deal: Rp ${_formatNumber(post.soldPrice ?? 0)}" 
-                                            : "Rp ${_formatNumber(post.price)} ${post.type == 'Borong' ? '(Total)' : '/ Kg'}", 
-                                          style: TextStyle(
-                                            color: _showHistory ? Colors.grey.shade700 : const Color(0xFF1B5E20), 
-                                            fontWeight: FontWeight.w800, 
-                                            fontSize: 15
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          
-                          // Footer Button
-                          if (!_showHistory)
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                              child: InkWell(
-                                onTap: () => _markAsSold(post),
-                                child: Container(
-                                  alignment: Alignment.center,
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.red.shade100, width: 1.5),
-                                    color: Colors.red.shade50
+                                    color: post.type == "Borong" ? Colors.green.shade50 : Colors.orange.shade50,
+                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(19)),
+                                    border: Border(bottom: BorderSide(color: post.type == "Borong" ? Colors.green.withOpacity(0.2) : Colors.orange.withOpacity(0.2)))
                                   ),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.check_circle_outline, size: 20, color: Colors.red.shade700),
-                                      const SizedBox(width: 8),
-                                      Text("Tandai Laku / Terjual", style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold)),
+                                      // Tag Type
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: post.type == "Borong" ? const Color(0xFF1B5E20) : Colors.deepOrange,
+                                          borderRadius: BorderRadius.circular(8),
+                                          boxShadow: [BoxShadow(color: (post.type == "Borong" ? Colors.green : Colors.orange).withOpacity(0.3), blurRadius: 6, offset: const Offset(0, 3))]
+                                        ),
+                                        child: Text(post.type.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                                      ),
+                                      const Spacer(),
+                                      
+                                      // Grouped Action Buttons
+                                       if (_showHistory)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                          decoration: BoxDecoration(color: Colors.grey.shade700, borderRadius: BorderRadius.circular(8)),
+                                          child: const Text("TERJUAL", style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                                        )
+                                      else 
+                                        Row(
+                                          children: [
+                                            // Update Price
+                                            if (post.type == "Borong") ...[
+                                                InkWell(
+                                                  onTap: () => _updateOfferPrice(post),
+                                                  child: Container(
+                                                    width: 36, height: 36,
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white,
+                                                      borderRadius: BorderRadius.circular(10),
+                                                      boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))]
+                                                    ),
+                                                    child: const Icon(Icons.price_check, size: 18, color: Colors.green),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                            ],
+                                            
+                                            // Edit Action
+                                            InkWell(
+                                              onTap: () => _editListing(post),
+                                              child: Container(
+                                                width: 36, height: 36,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  borderRadius: BorderRadius.circular(10),
+                                                  boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))]
+                                                ),
+                                                child: const Icon(Icons.edit, size: 18, color: Colors.blue),
+                                              ),
+                                            ),
+                                          ],
+                                        )
                                     ],
                                   ),
                                 ),
+                                
+                                // Body Content
+                                Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // Image
+                                      Container(
+                                        width: 90, height: 90,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade100,
+                                          borderRadius: BorderRadius.circular(16),
+                                          border: Border.all(color: Colors.grey.shade200),
+                                          image: const DecorationImage(
+                                            image: NetworkImage("https://via.placeholder.com/150"), 
+                                            fit: BoxFit.cover,
+                                            opacity: 0.8
+                                          ),
+                                        ),
+                                        child: Center(
+                                          child: Icon(Icons.add_a_photo, color: Colors.grey.shade400, size: 30),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      
+                                      // Details
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(post.commodity, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color(0xFF212121))),
+                                            const SizedBox(height: 6),
+                                            
+                                            // Attributes
+                                            Row(
+                                              children: [
+                                                Icon(Icons.scale, size: 14, color: Colors.grey.shade600),
+                                                const SizedBox(width: 4),
+                                                Text("${post.quantityTons} Ton", style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
+                                                const SizedBox(width: 12),
+                                                Icon(Icons.aspect_ratio, size: 14, color: Colors.grey.shade600),
+                                                const SizedBox(width: 4),
+                                                Text(post.area, style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
+                                              ],
+                                            ),
+                                            
+                                            const SizedBox(height: 12),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFF1F8E9),
+                                                borderRadius: BorderRadius.circular(6)
+                                              ),
+                                              child: Text(
+                                                _showHistory 
+                                                  ? "Deal: Rp ${_formatNumber(post.soldPrice ?? 0)}" 
+                                                  : "Rp ${_formatNumber(post.price)} ${post.type == 'Borong' ? '(Total)' : '/ Kg'}", 
+                                                style: TextStyle(
+                                                  color: _showHistory ? Colors.grey.shade700 : const Color(0xFF1B5E20), 
+                                                  fontWeight: FontWeight.w800, 
+                                                  fontSize: 15
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                
+                                // Footer Button
+                                if (!_showHistory)
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                    child: InkWell(
+                                      onTap: () => _markAsSold(post),
+                                      child: Container(
+                                        alignment: Alignment.center,
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: Colors.red.shade100, width: 1.5),
+                                          color: Colors.red.shade50
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.check_circle_outline, size: 20, color: Colors.red.shade700),
+                                            const SizedBox(width: 8),
+                                            Text("Tandai Laku / Terjual", style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        // 3. RATING OVERLAY (If Reviewed)
+                        if (_showHistory && post.rating != null)
+                          Positioned(
+                            top: 10, right: 10,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.amber,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)]
                               ),
-                            )
-                        ],
-                      ),
-                    ),
-                  );
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.star, size: 14, color: Colors.white),
+                                  const SizedBox(width: 4),
+                                  Text("${post.rating}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)),
+                                ],
+                              ),
+                            ),
+                          )
+                      ],
+                    );
                   },
                 ),
           ],
@@ -607,6 +643,7 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
     return Scaffold(
         resizeToAvoidBottomInset: false, // Prevents navbar from floating up with keyboard
         backgroundColor: Theme.of(context).colorScheme.background,
+        // Make body extend behind navbar if needed, but Stack handles it.
         body: Stack(
           children: [
             // Content Area

@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
-import 'package:flutter/material.dart';
-import '../screens/login_screen.dart';
 
 class AuthService {
   static const String baseUrl = "http://127.0.0.1:8000/api";
@@ -16,18 +14,21 @@ class AuthService {
     final url = Uri.parse("$baseUrl/login");
     final response = await http.post(
       url,
-      headers: {"Content-Type": "application/json"},
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
       body: jsonEncode({"email": email, "password": password}),
     );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
+
       final user = UserModel.fromJson(data);
 
-      // Simpan session
       SharedPreferences pref = await SharedPreferences.getInstance();
       await pref.setString("token", user.token);
-      await pref.setString("user", user.toJsonString());
+      await pref.setString("user", jsonEncode(data));
 
       return user;
     }
@@ -44,7 +45,10 @@ class AuthService {
     final url = Uri.parse("$baseUrl/register");
     final response = await http.post(
       url,
-      headers: {"Content-Type": "application/json"},
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
       body: jsonEncode({
         "full_name": name,
         "email": email,
@@ -56,34 +60,45 @@ class AuthService {
 
     if (response.statusCode == 201) {
       final data = jsonDecode(response.body);
+
       final user = UserModel.fromJson(data);
+
       SharedPreferences pref = await SharedPreferences.getInstance();
       await pref.setString("token", user.token);
-      await pref.setString("user", user.toJsonString());
+      await pref.setString("user", jsonEncode(data));
+
       return user;
     }
     return null;
   }
 
-  /// GET USER DATA DARI TOKEN
+  /// GET USER DATA DARI TOKEN (PROFILE)
   static Future<UserModel?> getUserData() async {
-    SharedPreferences pref = await SharedPreferences.getInstance();
-    final token = pref.getString("token");
-    final userString = pref.getString("user");
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString("token");
 
-    if (token == null || userString == null) return null;
+    if (token == null) return null;
 
-    final userMap = jsonDecode(userString);
-    return UserModel.fromJson(userMap);
+    final response = await http.get(
+      Uri.parse("$baseUrl/profile"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Accept": "application/json",
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return UserModel.fromJson({"user": data, "token": token});
+    }
+
+    return null;
   }
 
- static Future<void> logout(BuildContext context) async {
-  SharedPreferences pref = await SharedPreferences.getInstance();
-  await pref.clear();
-  Navigator.pushAndRemoveUntil(
-    context,
-    MaterialPageRoute(builder: (_) => const LoginScreen()),
-    (route) => false,
-  );
-}
+  /// LOGOUT — HAPUS TOKEN DI DEVICE
+  static Future<void> logout() async {
+    SharedPreferences pref = await SharedPreferences.getInstance();
+    await pref.remove("token");
+    await pref.remove("user");
+  }
 }

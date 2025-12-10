@@ -31,7 +31,7 @@ Integrasi dengan metode pembayaran digital agar transaksi lebih mudah dan aman.
 Fitur komunikasi langsung antara pembeli dan petani untuk menanyakan detail produk atau proses pengirima
 
 ## Deskripsi Project
-Jenis Aplikasi : Crooss Platform<br>
+Jenis Aplikasi : Cross Platform<br>
 Framework : Flutter<br>
 Versi SDK : 3.35.4<br>
 

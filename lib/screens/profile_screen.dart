@@ -9,7 +9,6 @@ import 'farmer_home_screen.dart';
 import 'farmer/farmer_reviews_screen.dart';
 import '../services/verification_service.dart';
 
-
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -18,10 +17,10 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-
-  String verificationStatus = "loading"; // none, pending, verified, rejected
+  String verificationStatus = "loading";
   UserModel? user;
   bool isLoading = true;
+  String? errorMessage;
 
   @override
   void initState() {
@@ -31,25 +30,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadUserData() async {
     try {
-      final data = await AuthService.getUserData();
-      final status = await VerificationService.getStatus();
+      final data = await AuthService.getUserData();      
+      if (data == null) {
+        throw Exception("User data is null");
+      }
+      String status = "none";
+      try {
+        status = await VerificationService.getStatus();
+      } catch (e) {
+        print("⚠️ ERROR GET VERIFICATION STATUS: $e");
+      }
 
-      setState(() {
-        user = data;
-        verificationStatus = status;
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() => isLoading = false);
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        setState(() {
+          user = data;
+          verificationStatus = status;
+          isLoading = false;
+          errorMessage = null;
+        });
+      }
+      
+      print("✅ LOAD USER DATA BERHASIL");
+    } catch (e) {
+      print("❌ ERROR LOAD USER DATA: $e");
+      
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          errorMessage = e.toString();
+        });
+
+        // Tampilkan dialog error sebelum redirect
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            title: const Text("Sesi Berakhir"),
+            content: const Text(
+              "Sesi login Anda telah berakhir. Silakan login kembali.",
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (route) => false,
+                  );
+                },
+                child: const Text("OK"),
+              ),
+            ],
+          ),
         );
       }
     }
   }
-
 
   void _handleLogout() {
     showDialog(
@@ -65,10 +102,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              Navigator.pop(ctx); 
+              Navigator.pop(ctx);
               await AuthService.logout();
               if (mounted) {
-                Navigator.pushReplacementNamed(context, '/login');
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
               }
             },
             child: const Text("Ya"),
@@ -87,8 +128,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     if (user == null) {
-      return const Scaffold(
-        body: Center(child: Text("Gagal memuat data user")),
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              Text(
+                "Gagal memuat data user",
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                errorMessage ?? "Terjadi kesalahan",
+                style: Theme.of(context).textTheme.bodySmall,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    isLoading = true;
+                  });
+                  _loadUserData();
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text("Coba Lagi"),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
@@ -96,32 +166,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 100),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 20),
-            _buildVerificationBox(),
-            const SizedBox(height: 20),
-            if (isBuyer) _buildRoleSwitchCard(context, isBuyer),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                "MENU AKUN",
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                  letterSpacing: 1,
+      body: RefreshIndicator(
+        onRefresh: _loadUserData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 100),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 20),
+              _buildVerificationBox(),
+              const SizedBox(height: 20),
+              if (isBuyer) _buildRoleSwitchCard(context, isBuyer),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  "MENU AKUN",
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    letterSpacing: 1,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            _buildMenuItems(isBuyer),
-          ],
+              const SizedBox(height: 8),
+              _buildMenuItems(isBuyer),
+            ],
+          ),
         ),
       ),
     );
@@ -191,7 +265,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF1B5E20))),
           const SizedBox(height: 4),
-          Text(user!.slogan ??
+          Text(
+              user!.slogan ??
                   (user!.role == "farmer"
                       ? "Petani • Sejak 2018"
                       : "Pembeli"),
@@ -310,10 +385,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const VerificationFormScreen()),
-              );
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const VerificationFormScreen()),
+            );
           },
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -356,67 +432,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _handleRoleSwitch(BuildContext context, bool isBuyer) {
-    if (isBuyer) {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Row(
-            children: [
-              Icon(Icons.agriculture, color: Colors.green),
-              SizedBox(width: 10),
-              Text("Masuk Mode Petani?")
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset('assets/images/panenlokal_logo.png',
-                  height: 80,
-                  errorBuilder: (c, o, s) =>
-                      const Icon(Icons.store, size: 60, color: Colors.green)),
-              const SizedBox(height: 16),
-              const Text(
-                  "Anda akan memasuki halaman pengelolaan ladang dan penjualan.",
-                  textAlign: TextAlign.center),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(8)),
-                child: const Text(
-                    "💡 Tips: Pastikan stok panen Anda siap sebelum menerima pesanan!",
-                    style: TextStyle(fontSize: 12, color: Colors.green),
-                    textAlign: TextAlign.center),
-              )
-            ],
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text("Batal")),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white),
-              onPressed: () {
-                Navigator.pop(ctx);
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) =>
-                          const VerificationFormScreen()),
-                );
-              },
-              child: const Text("Masuk Sekarang"),
-            ),
-          ],
-        ),
-      );
-    }
-  }
-
   Widget _buildMenuItems(bool isBuyer) {
     return Column(
       children: [
@@ -425,15 +440,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           title: "Edit Profil",
           subtitle: "Ubah foto, nama, bio",
           onTap: () async {
-            // 🔥 PERBAIKAN: Tunggu hasil dari EditProfileScreen
             final result = await Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => EditProfileScreen(isBuyer: isBuyer)
-              ),
+                  builder: (_) => EditProfileScreen(isBuyer: isBuyer)),
             );
-            
-            // Jika ada perubahan, reload data
+
             if (result == true && mounted) {
               setState(() {
                 isLoading = true;
@@ -447,10 +459,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             icon: Icons.star_half_rounded,
             title: "Ulasan Pembeli",
             subtitle: "Lihat rating & komentar pelanggan",
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const FarmerReviewsScreen())),
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const FarmerReviewsScreen())),
           ),
         _buildMenuCard(
           icon: Icons.verified_outlined,
@@ -462,6 +472,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 context,
                 MaterialPageRoute(
                     builder: (_) => const VerificationFormScreen()));
+            // Reload setelah kembali dari form verifikasi
+            if (mounted) {
+              setState(() {
+                isLoading = true;
+              });
+              await _loadUserData();
+            }
           },
         ),
         _buildMenuCard(

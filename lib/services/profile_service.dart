@@ -31,7 +31,7 @@ class ProfileService {
     // 🔥 PASTIKAN HEADER DIKIRIM DENGAN BENAR
     request.headers.addAll({
       'Authorization': 'Bearer $token',
-      'Content-Type': 'multipart/form-data', // Opsional, tapi baik untuk kejelasan
+      // 'Content-Type': 'multipart/form-data', // Opsional, tapi baik untuk kejelasan
     });
 
     // Menambahkan field teks

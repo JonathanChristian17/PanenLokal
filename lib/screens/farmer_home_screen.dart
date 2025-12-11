@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'profile_screen.dart';
 import 'request_screen.dart';
-import 'farmer/verification_flow_screen.dart'; 
-import 'farmer/listing_flow_screen.dart'; 
+// import 'farmer/verification_flow_screen.dart'; 
+// import 'farmer/listing_flow_screen.dart'; 
 import 'market_screen.dart'; 
 import 'listing_form_screen.dart'; 
 
-// --- MODEL COMMODITY POST ---
+// --- MODEL COMMODITY POST (DIBIARKAN DI TOP-LEVEL) ---
 class CommodityPost {
   final String id;
   final String commodity; 
@@ -89,7 +89,7 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
     });
   }
   
-  // Callback to add new post
+  // Callback to add new post (Tidak digunakan lagi karena pakai API, tapi dibiarkan untuk menjaga dummy data)
   void _addNewPost(CommodityPost post) {
     setState(() {
       myCommodityPosts.insert(0, post); // Add to top
@@ -198,9 +198,6 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                         onPressed: () {
                           // Apply Change
                           setState(() {
-                            // Since distinct object, we might need index or update properties directly if reference is same
-                            // List holds references, so modifying 'post' (reference) works if object is mutable.
-                            // But standard practice: find index.
                             final index = myCommodityPosts.indexOf(post);
                             if (index != -1) {
                                 myCommodityPosts[index] = CommodityPost(
@@ -630,12 +627,8 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
 
 
     final Widget hargaPasar = const MarketScreen(); 
-    // Pass callback to ListingFormScreen
-    final Widget buatIklan = ListingFormScreen(
-        onSubmit: (post) {
-            _addNewPost(post);
-        }
-    );
+    // PERBAIKAN: Hapus parameter onSubmit
+    final Widget buatIklan = const ListingFormScreen(); 
     final Widget profil = const ProfileScreen();
 
     final List<Widget> pages = [lapakSaya, hargaPasar, buatIklan, profil];
@@ -674,9 +667,7 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
   }
 }
 
-// 🎮 UNIFIED PS5 NAVBAR COMPONENT
-// This widget encapsulates all layout logic, mathematics, and animations
-// ensuring it works responsively as a single unit on any screen.
+// 🎮 UNIFIED PS5 NAVBAR COMPONENT (DIPINDAHKAN KE LUAR _FarmerHomeScreenState)
 class Ps5Navbar extends StatelessWidget {
   final int selectedIndex;
   final Function(int) onItemTapped;
@@ -836,7 +827,7 @@ class Ps5Navbar extends StatelessWidget {
 
   String _getLabelForIndex(int index) {
     switch (index) {
-      case 0: return "HARGA LISTING";
+      case 0: return "LAPAK SAYA";
       case 1: return "PASAR";
       case 2: return "IKLAN";
       case 3: return "PROFIL";
@@ -846,8 +837,7 @@ class Ps5Navbar extends StatelessWidget {
 }
 
 
-
-// 🎨 DUAL CURVE PAINTER
+// 🎨 DUAL CURVE PAINTER (DIPINDAHKAN KE LUAR)
 class DualCurvePainter extends CustomPainter {
   final Color color;
   DualCurvePainter({required this.color});
@@ -903,7 +893,7 @@ class DualCurvePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// 🎨 CURVED DASH PAINTER
+// 🎨 CURVED DASH PAINTER (DIPINDAHKAN KE LUAR)
 class CurvedDashPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {

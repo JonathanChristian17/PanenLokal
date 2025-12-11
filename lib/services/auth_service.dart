@@ -11,28 +11,38 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    final url = Uri.parse("$baseUrl/login");
-    final response = await http.post(
-      url,
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      },
-      body: jsonEncode({"email": email, "password": password}),
-    );
+    try {
+      final url = Uri.parse("$baseUrl/login");
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: jsonEncode({"email": email, "password": password}),
+      );
 
-      final user = UserModel.fromJson(data);
+      print("LOGIN STATUS: ${response.statusCode}");
+      print("LOGIN BODY: ${response.body}");
 
-      SharedPreferences pref = await SharedPreferences.getInstance();
-      await pref.setString("token", user.token);
-      await pref.setString("user", jsonEncode(data));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
 
-      return user;
+        final user = UserModel.fromJson(data);
+
+        SharedPreferences pref = await SharedPreferences.getInstance();
+        await pref.setString("token", user.token);
+        await pref.setString("user", jsonEncode(data["user"]));
+
+        print("✅ LOGIN BERHASIL - TOKEN TERSIMPAN");
+        return user;
+      }
+      
+      return null;
+    } catch (e) {
+      return null;
     }
-    return null;
   }
 
   /// REGISTER
@@ -42,63 +52,123 @@ class AuthService {
     required String phone,
     required String password,
   }) async {
-    final url = Uri.parse("$baseUrl/register");
-    final response = await http.post(
-      url,
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      },
-      body: jsonEncode({
-        "full_name": name,
-        "email": email,
-        "phone": phone,
-        "password": password,
-        "address": "-"
-      }),
-    );
+    try {
+      final url = Uri.parse("$baseUrl/register");
 
-    if (response.statusCode == 201) {
-      final data = jsonDecode(response.body);
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: jsonEncode({
+          "full_name": name,
+          "email": email,
+          "phone": phone,
+          "password": password,
+          "address": "-"
+        }),
+      );
 
-      final user = UserModel.fromJson(data);
+      print("REGISTER STATUS: ${response.statusCode}");
+      print("REGISTER BODY: ${response.body}");
 
-      SharedPreferences pref = await SharedPreferences.getInstance();
-      await pref.setString("token", user.token);
-      await pref.setString("user", jsonEncode(data));
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final data = jsonDecode(response.body);
 
-      return user;
+        final user = UserModel.fromJson(data);
+
+        SharedPreferences pref = await SharedPreferences.getInstance();
+        await pref.setString("token", user.token);
+        await pref.setString("user", jsonEncode(data["user"]));
+
+        return user;
+      }
+      return null;
+    } catch (e) {
+      return null;
     }
-    return null;
   }
 
-  /// GET USER DATA DARI TOKEN (PROFILE)
+  /// GET USER DATA
   static Future<UserModel?> getUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString("token");
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString("token");
 
-    if (token == null) return null;
 
-    final response = await http.get(
-      Uri.parse("$baseUrl/profile"),
-      headers: {
-        "Authorization": "Bearer $token",
-        "Accept": "application/json",
-      },
-    );
+      if (token == null || token.isEmpty) {
+        return null;
+      }
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return UserModel.fromJson({"user": data, "token": token});
+      print("📡 REQUEST GET PROFILE...");
+      final response = await http.get(
+        Uri.parse("$baseUrl/profile"),
+        headers: {
+          "Authorization": "Bearer $token",
+          "Accept": "application/json",
+        },
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          print("⏱️ REQUEST TIMEOUT");
+          throw Exception("Request timeout");
+        },
+      );
+
+      print("GET PROFILE STATUS: ${response.statusCode}");
+      print("GET PROFILE BODY: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        // Simpan raw user dari API
+        await prefs.setString("user", jsonEncode(data));
+
+        // Bangun user model dari data langsung
+        final user = UserModel.fromJson({
+          "user": data,
+          "token": token,
+        });
+        return user;
+      } else if (response.statusCode == 401) {
+        return null;
+      } else {
+        return null;
+      }
+    } catch (e) {
+      return null;
     }
-
-    return null;
   }
 
-  /// LOGOUT — HAPUS TOKEN DI DEVICE
+  /// CHECK IF USER IS LOGGED IN
+  static Future<bool> isLoggedIn() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString("token");
+      return token != null && token.isNotEmpty;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// GET TOKEN
+  static Future<String?> getToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString("token");
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// LOGOUT
   static Future<void> logout() async {
-    SharedPreferences pref = await SharedPreferences.getInstance();
-    await pref.remove("token");
-    await pref.remove("user");
+    try {
+      SharedPreferences pref = await SharedPreferences.getInstance();
+      await pref.remove("token");
+      await pref.remove("user");
+    } catch (e) {
+    }
   }
 }

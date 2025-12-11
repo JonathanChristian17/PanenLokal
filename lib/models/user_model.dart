@@ -43,7 +43,7 @@ class UserModel {
       latitude: u["latitude"]?.toString(),
       longitude: u["longitude"]?.toString(),
       avatarUrl: u["avatar_url"],
-      verified: u["verified"] == 1 || u["verified"] == true, // 🔥 PERBAIKAN: Ambil dari API
+      verified: (u["verified"] ?? true) == true,
       token: json["token"] ?? "",
     );
   }

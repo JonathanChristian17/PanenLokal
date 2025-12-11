@@ -71,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       size: 100, color: Theme.of(context).primaryColor),
                 ),
                 const SizedBox(height: 25),
-                Text("Selamat Datang 👋",
+                Text("Selamat Datang Kembali",
                     style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,

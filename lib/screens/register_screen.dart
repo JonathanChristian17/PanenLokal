@@ -19,6 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController confirmPasswordController = TextEditingController();
 
   bool loading = false;
+  bool obscurePassword = true;
 
   Future<void> _register() async {
     final name = nameController.text.trim();
@@ -100,9 +101,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 15),
                 _input("Nomor HP", Icons.phone, phoneController, type: TextInputType.phone),
                 const SizedBox(height: 15),
-                _input("Password", Icons.lock, passwordController, hidden: true),
+                _input("Password", Icons.lock, passwordController, hidden: true, obscurePassword: obscurePassword, onTogglePassword: () => setState(() => obscurePassword = !obscurePassword)),
                 const SizedBox(height: 15),
-                _input("Konfirmasi Password", Icons.lock_outline, confirmPasswordController, hidden: true),
+                _input("Konfirmasi Password", Icons.lock_outline, confirmPasswordController, hidden: true, obscurePassword: obscurePassword, onTogglePassword: () => setState(() => obscurePassword = !obscurePassword)),
                 const SizedBox(height: 25),
 
                 SizedBox(
@@ -137,20 +138,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
-
   Widget _input(String label, IconData icon, TextEditingController c,
-      {bool hidden = false, TextInputType type = TextInputType.text}) {
+      {bool hidden = false, TextInputType type = TextInputType.text, bool obscurePassword = false, VoidCallback? onTogglePassword}) {
     return TextField(
       controller: c,
-      obscureText: hidden,
+      obscureText: obscurePassword,
       keyboardType: type,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon),
+        suffixIcon: hidden && onTogglePassword != null
+            ? IconButton(
+                icon: Icon(obscurePassword ? Icons.visibility_off : Icons.visibility),
+                onPressed: onTogglePassword,
+              )
+            : null,
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
-}
+  }

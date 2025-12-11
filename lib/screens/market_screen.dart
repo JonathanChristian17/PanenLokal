@@ -1,111 +1,110 @@
 import 'package:flutter/material.dart';
+import '../services/market_service.dart';
+import '../models/market_price.dart';
 
-
-class MarketScreen extends StatelessWidget {
+class MarketScreen extends StatefulWidget {
   const MarketScreen({super.key});
 
   @override
+  State<MarketScreen> createState() => _MarketScreenState();
+}
+
+class _MarketScreenState extends State<MarketScreen> {
+  final MarketService _service = MarketService();
+  late Future<List<MarketPrice>> futureItems;
+
+  @override
+  void initState() {
+    super.initState();
+    futureItems = _service.getMarketPrices();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Logic: Harga reset pukul 20:00 (8 Malam).
-    // Jika jam < 20:00, tampilkan harga/tanggal "Kemarin".
-    // Jika jam >= 20:00, tampilkan harga/tanggal "Hari Ini".
-    
     DateTime displayDate = DateTime.now();
     if (displayDate.hour < 20) {
-       // Belum jam 8 malam, gunakan data kemarin
-       displayDate = displayDate.subtract(const Duration(days: 1));
+      displayDate = displayDate.subtract(const Duration(days: 1));
     }
 
-    // Manual Formatting (Bypassing intl package)
     final List<String> months = [
       'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
       'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
     ];
-    final String formattedDate = "${displayDate.day.toString().padLeft(2, '0')} ${months[displayDate.month - 1]} ${displayDate.year}";
 
-    // 25 Daftar Harga Komoditas Pertanian Karo (Sumber Data: User/Karosatuklik)
-    final List<MarketItem> marketItems = [
-      MarketItem(name: "Ercis Berastagi", priceRange: "17.000 - 22.000", unit: "KG", icon: "🫛", trend: PriceTrend.up),
-      MarketItem(name: "Brokoli", priceRange: "6.000 - 7.000", unit: "KG", icon: "🥦", trend: PriceTrend.up),
-      MarketItem(name: "Buncis", priceRange: "14.000 - 15.000", unit: "KG", icon: "🫛", trend: PriceTrend.stable),
-      MarketItem(name: "Cabai Hijau", priceRange: "25.000 - 28.000", unit: "KG", icon: "🌶️", trend: PriceTrend.up),
-      MarketItem(name: "Cabai Merah", priceRange: "60.000 - 52.000", unit: "KG", icon: "🌶️", trend: PriceTrend.down),
-      MarketItem(name: "Cabai Rawit Kasar", priceRange: "52.000 - 53.000", unit: "KG", icon: "🌶️", trend: PriceTrend.up),
-      MarketItem(name: "Cabai Rawit Kecil", priceRange: "55.000", unit: "KG", icon: "🌶️", trend: PriceTrend.stable),
-      MarketItem(name: "Daun Sop / Seledri", priceRange: "4.000 - 5.000", unit: "KG", icon: "🌿", trend: PriceTrend.up),
-      MarketItem(name: "Daun Prey", priceRange: "5.000 - 6.000", unit: "KG", icon: "🧅", trend: PriceTrend.up),
-      MarketItem(name: "Jagung Manis", priceRange: "2.500 - 3.500", unit: "KG", icon: "🌽", trend: PriceTrend.stable),
-      MarketItem(name: "Kentang Kuning", priceRange: "6.000 - 7.000", unit: "KG", icon: "🥔", trend: PriceTrend.stable),
-      MarketItem(name: "Kentang Merah", priceRange: "6.500 - 7.000", unit: "KG", icon: "🥔", trend: PriceTrend.up),
-      MarketItem(name: "Kol / Kubis", priceRange: "2.000 - 2.500", unit: "KG", icon: "🥬", trend: PriceTrend.down),
-      MarketItem(name: "Kol Bunga", priceRange: "4.500 - 5.500", unit: "KG", icon: "🥦", trend: PriceTrend.up),
-      MarketItem(name: "Labu / Jambe", priceRange: "3.500", unit: "KG", icon: "🎃", trend: PriceTrend.stable),
-      MarketItem(name: "Sayur Pahit", priceRange: "6.000 - 8.000", unit: "KG", icon: "🥬", trend: PriceTrend.up),
-      MarketItem(name: "Sayur Putih", priceRange: "2.500 - 3.500", unit: "KG", icon: "🥬", trend: PriceTrend.down),
-      MarketItem(name: "Terong Antaboga", priceRange: "100.000 - 110.000", unit: "BAL", icon: "🍆", trend: PriceTrend.up),
-      MarketItem(name: "Tomat", priceRange: "6.500 - 7.500", unit: "KG", icon: "🍅", trend: PriceTrend.up),
-      MarketItem(name: "Wortel Karo", priceRange: "7.000 - 8.000", unit: "KG", icon: "🥕", trend: PriceTrend.up),
-      MarketItem(name: "Jipang Besar", priceRange: "45.000 - 55.000", unit: "RAJUT", icon: "🥒", trend: PriceTrend.up),
-      MarketItem(name: "Anak Jipang", priceRange: "4.000", unit: "RAJUT", icon: "🥒", trend: PriceTrend.stable),
-      MarketItem(name: "Selada", priceRange: "15.000 - 18.000", unit: "KG", icon: "🥬", trend: PriceTrend.up),
-      MarketItem(name: "Sayur Botol", priceRange: "6.000 - 7.000", unit: "KG", icon: "🥒", trend: PriceTrend.stable),
-      MarketItem(name: "Terong Belanda", priceRange: "20.000 - 23.000", unit: "KG", icon: "🍆", trend: PriceTrend.up),
-    ];
+    final String formattedDate =
+        "${displayDate.day.toString().padLeft(2, '0')} ${months[displayDate.month - 1]} ${displayDate.year}";
 
-    return Container(
-      color: Theme.of(context).colorScheme.background, // Maintain background color
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 120), // Space for Navbar
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-               // 1. CUSTOM HEADER (Unified Style matching other screens)
-               Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
-                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 10, bottom: 25, left: 20, right: 20),
-                  child: Column(
-                    children: [
-                       const Text(
-                        "Daftar Harga Komoditas",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 22, 
-                          fontWeight: FontWeight.bold, 
-                          color: Color(0xFF1B5E20)
-                        ),
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.background,
+      body: SafeArea(
+        child: FutureBuilder<List<MarketPrice>>(
+          future: futureItems,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (!snapshot.hasData || snapshot.hasError) {
+              return const Center(
+                child: Text("Gagal memuat data harga."),
+              );
+            }
+
+            final List<MarketPrice> marketItems = snapshot.data!;
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: 120),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // HEADER
+                  Container(
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius:
+                          BorderRadius.vertical(bottom: Radius.circular(30)),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 10,
+                            offset: Offset(0, 4)),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                          top: 10, bottom: 25, left: 20, right: 20),
+                      child: Column(
+                        children: [
+                          const Text(
+                            "Daftar Harga Komoditas",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1B5E20)),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Data Tanggal: $formattedDate",
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "Data Tanggal: $formattedDate",
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
 
-              const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-              // 2. CONTENT CONTAINER
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Banner / Highlight
-                    Container(
+                  // Banner
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -116,42 +115,56 @@ class MarketScreen extends StatelessWidget {
                         ),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
-                          BoxShadow(color: Colors.green.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5)),
+                          BoxShadow(
+                              color: Colors.green.withOpacity(0.3),
+                              blurRadius: 10,
+                              offset: const Offset(0, 5)),
                         ],
                       ),
                       child: const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Pantau Harga Tani Tanah Karo", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text("Pantau Harga Tani Tanah Karo",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16)),
                           SizedBox(height: 4),
-                          Text("Update setiap hari pukul 20:00 WIB.", style: TextStyle(color: Colors.white70, fontSize: 12)),
+                          Text("Update setiap hari pukul 20:00 WIB.",
+                              style: TextStyle(
+                                  color: Colors.white70, fontSize: 12)),
                         ],
                       ),
                     ),
-      
-                    const SizedBox(height: 20),
-      
-                    // GRID LIST
-                    GridView.builder(
-                      padding: EdgeInsets.zero, // Padding handled by parent
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // GRID
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: GridView.builder(
                       shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(), // Scroll handled by SingleChildScrollView
+                      physics: const NeverScrollableScrollPhysics(),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
-                        childAspectRatio: 0.85, 
+                        childAspectRatio: 0.95,
                       ),
                       itemCount: marketItems.length,
                       itemBuilder: (context, index) {
                         return _buildMarketCard(context, marketItems[index]);
                       },
                     ),
-      
-                    const SizedBox(height: 30),
-      
-                    // SOURCE CITATION
-                    Container(
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  // Citation
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -166,180 +179,131 @@ class MarketScreen extends StatelessWidget {
                             children: [
                               Icon(Icons.link, size: 16, color: Colors.blue),
                               SizedBox(width: 8),
-                              Text(
-                                "Sumber Data Resmi: Karosatuklik",
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87),
-                              ),
+                              Text("Sumber Data Resmi: Karosatuklik",
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                      color: Colors.black87)),
                             ],
                           ),
                           SizedBox(height: 4),
                           Text(
                             "https://karosatuklik.com/topic/daftar-harga-komoditas/",
-                            style: TextStyle(fontSize: 10, color: Colors.blue, decoration: TextDecoration.underline),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.blue,
+                              decoration: TextDecoration.underline,
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildMarketCard(BuildContext context, MarketItem item) {
-    Color trendColor;
-    IconData trendIcon;
-    
-    switch (item.trend) {
-      case PriceTrend.up:
-        trendColor = Colors.red;
-        trendIcon = Icons.trending_up;
-        break;
-      case PriceTrend.down:
-        trendColor = Colors.green; // Price down is usually bad for farmers but let's stick to standard market indicators: red for up (inflation), green for down? 
-        // Actually for farmers, price UP is GOOD (Green), Price DOWN is BAD (Red).
-        // Let's assume Farmer perspective: High price = Green.
-        trendColor = const Color(0xFF1B5E20);
-        trendIcon = Icons.trending_up;
-        break;
-      case PriceTrend.stable:
-        trendColor = Colors.orange;
-        trendIcon = Icons.remove;
-        break;
-    }
-    // Correcting logic: The item just holds the enum. Overriding visuals: 
-    // Usually Red = Price Increase (Expensive for buyer), Green = Cheap.
-    // But this is Farmer App. High price = Profit. 
-    // Let's just use: Arrow Up = Green, Arrow Down = Red, Line = Orange.
-    
-    if (item.trend == PriceTrend.up) {
-        trendColor = const Color(0xFF2E7D32); // Green
-        trendIcon = Icons.arrow_upward;
-    } else if (item.trend == PriceTrend.down) {
-        trendColor = const Color(0xFFC62828); // Red
-        trendIcon = Icons.arrow_downward;
-    } else {
-        trendColor = Colors.grey;
-        trendIcon = Icons.remove;
-    }
-
-    return Container(
-      // 1. Layer Shadow: Outer Container with Margin
-      decoration: BoxDecoration(
-        color: Colors.transparent, 
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          // Shadow 1: Darker, tighter (Deep depth)
-          BoxShadow(
-            color: Colors.black.withOpacity(0.20), // Matched with Listing Form
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-            spreadRadius: 0,
+  Widget _buildMarketCard(BuildContext context, MarketPrice item) {
+    return Stack(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: const LinearGradient(
+              colors: [Color(0xFFE8F5E9), Color(0xFFF1F8E9)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          // Shadow 2: Softer, wider (Ambient)
-          BoxShadow(
-            color: Colors.black.withOpacity(0.12), // Matched with Listing Form
-            blurRadius: 15, // Smooth blur
-            offset: const Offset(0, 8),
-            spreadRadius: 2, 
-          ),
-        ],
-      ),
-      // 2. Layer Content
-      child: Material(
-        color: Colors.white,
-        elevation: 0, 
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.grey.shade300, width: 2.0), // THICKER STROKE (2.0)
-        ),
-        clipBehavior: Clip.antiAlias, 
-        child: InkWell(
-           // Added InkWell for potential future interactivity
-          onTap: () {},
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Icon Box
-              Container(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () {},
+              child: Padding(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.background, // Cream bg
-                  shape: BoxShape.circle,
-                ),
-                child: Text(item.icon, style: const TextStyle(fontSize: 32)),
-              ),
-              const SizedBox(height: 12),
-              
-              // Name
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Text(
-                  item.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(height: 4),
-              
-              // Price
-              Text(
-                "Rp ${item.priceRange}",
-                style: const TextStyle(
-                  color: Color(0xFF1B5E20), 
-                  fontWeight: FontWeight.w800, 
-                  fontSize: 14
-                ),
-              ),
-              Text(
-                "per ${item.unit}",
-                style: TextStyle(color: Colors.grey[600], fontSize: 10),
-              ),
-              
-              const SizedBox(height: 8),
-              
-              // Trend Indicator
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: trendColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(trendIcon, size: 12, color: trendColor),
-                    const SizedBox(width: 4),
+                    // Icon komoditas
+                    if (item.icon.isNotEmpty)
+                      Center(
+                        child: Text(
+                          item.icon,
+                          style: const TextStyle(fontSize: 36),
+                        ),
+                      ),
+                    const SizedBox(height: 12),
+                    // Nama komoditas
                     Text(
-                      item.trend == PriceTrend.up ? "Naik" : (item.trend == PriceTrend.down ? "Turun" : "Stabil"),
-                      style: TextStyle(fontSize: 10, color: trendColor, fontWeight: FontWeight.bold),
+                      item.commodity,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1B5E20),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    // Harga
+                    Text(
+                      "Rp ${item.price}",
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF2E7D32),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    // Satuan
+                    Text(
+                      item.unit,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[700],
+                      ),
                     ),
                   ],
                 ),
-              )
-            ],
+              ),
+            ),
           ),
         ),
-      ),
+        // Badge contoh: harga naik/turun (statis)
+        Positioned(
+          top: 8,
+          right: 8,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.redAccent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Text(
+              "Naik",
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
-}
-
-enum PriceTrend { up, down, stable }
-
-class MarketItem {
-  final String name;
-  final String priceRange;
-  final String unit;
-  final String icon;
-  final PriceTrend trend;
-
-  MarketItem({required this.name, required this.priceRange, required this.unit, required this.icon, required this.trend});
 }

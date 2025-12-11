@@ -7,6 +7,8 @@ import 'verification_form_screen.dart';
 import 'buyer_home_screen.dart';
 import 'farmer_home_screen.dart';
 import 'farmer/farmer_reviews_screen.dart';
+import '../services/verification_service.dart';
+
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -16,6 +18,8 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+
+  String verificationStatus = "loading"; // none, pending, verified, rejected
   UserModel? user;
   bool isLoading = true;
 
@@ -28,8 +32,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadUserData() async {
     try {
       final data = await AuthService.getUserData();
+      final status = await VerificationService.getStatus();
+
       setState(() {
         user = data;
+        verificationStatus = status;
         isLoading = false;
       });
     } catch (e) {
@@ -42,6 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     }
   }
+
 
   void _handleLogout() {
     showDialog(
@@ -301,7 +309,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () => _handleRoleSwitch(context, isBuyer),
+          onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const VerificationFormScreen()),
+              );
+          },
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Row(
@@ -393,7 +406,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   context,
                   MaterialPageRoute(
                       builder: (_) =>
-                          const FarmerHomeScreen(title: 'Lapak Saya')),
+                          const VerificationFormScreen()),
                 );
               },
               child: const Text("Masuk Sekarang"),

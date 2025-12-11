@@ -21,7 +21,7 @@ class VerificationService {
       return false;
     }
 
-    var url = Uri.parse("http://10.0.2.2:8000/api/verification/submit");
+    var url = Uri.parse("http://127.0.0.1:8000/api/verification/submit");
 
     var request = http.MultipartRequest("POST", url);
     request.headers['Authorization'] = "Bearer $token";

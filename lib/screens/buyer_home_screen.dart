@@ -6,6 +6,8 @@ import 'profile_screen.dart';
 import 'request_screen.dart';
 import 'notification_screen.dart';
 import 'market_screen.dart'; 
+import 'package:panen_lokal/models/user_model.dart';
+import 'package:panen_lokal/services/auth_service.dart';
 
 
 // Definisi model CommodityPost (Updated with all requested fields)
@@ -47,6 +49,28 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
   int _selectedIndex = 0;
   final TextEditingController _searchController = TextEditingController();
   final Set<String> _favoriteIds = {}; 
+
+  String _userName = "User"; // Variabel nama
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUser(); // Panggil fungsi saat layar dibuka
+  }
+
+  // Fungsi ambil data user
+  void _loadCurrentUser() async {
+    UserModel? user = await AuthService.getLocalUser();
+    
+    if (user != null) {
+      if (mounted) {
+        setState(() {
+          // Ambil nama depan saja
+          _userName = user.fullName.split(" ")[0]; 
+        });
+      }
+    }
+  }
 
   // State for Review Flow
   bool _waitingForReview = false;
@@ -661,7 +685,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
                                  crossAxisAlignment: CrossAxisAlignment.start,
                                  children: [
                                    Text('PanenLokal.', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey.shade500, letterSpacing: 0.5)),
-                                   Text('Halo, User!', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.primary, letterSpacing: 0.5)),
+                                   Text('Halo,$_userName!', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.primary, letterSpacing: 0.5)),
                                  ],
                                ),
                              )

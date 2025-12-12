@@ -11,7 +11,7 @@ class UserModel {
   final String? longitude;
   final String? avatarUrl;
   final String address;
-  final bool verified;
+  final bool verified; // 🔥 DIBACA DARI LARAVEL
   final String token;
 
   UserModel({
@@ -31,6 +31,9 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     final u = json["user"] ?? json;
+    
+    // 🔥 PERBAIKAN: Larave Accessor 'verified' mengembalikan boolean
+    final isVerified = u["verified"] == true;
 
     return UserModel(
       id: u["id"] ?? 0,
@@ -43,7 +46,7 @@ class UserModel {
       latitude: u["latitude"]?.toString(),
       longitude: u["longitude"]?.toString(),
       avatarUrl: u["avatar_url"],
-      verified: (u["verified"] ?? true) == true,
+      verified: isVerified, // 🔥 MENGGUNAKAN NILAI DARI LARAVEL
       token: json["token"] ?? "",
     );
   }

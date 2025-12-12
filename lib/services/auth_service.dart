@@ -152,6 +152,24 @@ class AuthService {
     }
   }
 
+  /// GET LOCAL USER (Tanpa Internet/API Call)
+  static Future<UserModel?> getLocalUser() async {
+    try {
+      SharedPreferences pref = await SharedPreferences.getInstance();
+      String? userString = pref.getString("user"); // Ambil string JSON yang disimpan saat login
+
+      if (userString != null && userString.isNotEmpty) {
+        // Decode JSON string menjadi Map
+        final userData = jsonDecode(userString);
+        // Ubah menjadi Object UserModel
+        return UserModel.fromJson(userData);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   /// GET TOKEN
   static Future<String?> getToken() async {
     try {

@@ -1,8 +1,9 @@
+// lib/screens/login_screen.dart
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../models/user_model.dart';
 import 'register_screen.dart';
-import 'buyer_home_screen.dart';
+import 'main_nav_screen.dart'; // <--- IMPORT MAIN NAV SCREEN
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -38,11 +39,10 @@ class _LoginScreenState extends State<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Email / Password salah")));
       } else {
+        // NAVIGASI KE ROOT NAV SCREEN supaya navbar dan role-based menu tampil
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-              builder: (_) =>
-                  const BuyerHomeScreen(title: "Beranda Pembeli")),
+          MaterialPageRoute(builder: (_) => const MainNavScreen()),
         );
       }
     } catch (e) {

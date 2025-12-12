@@ -3,6 +3,7 @@ import '../services/auth_service.dart';
 import '../models/user_model.dart';
 import 'buyer_home_screen.dart';
 import 'login_screen.dart';
+import 'main_nav_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -54,7 +55,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => BuyerHomeScreen(title: "Beranda Pembeli"),
+          builder: (_) => const MainNavScreen(),
         ),
       );
     } else {

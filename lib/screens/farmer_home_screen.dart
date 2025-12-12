@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 import 'profile_screen.dart';
 import 'request_screen.dart';
-// import 'farmer/verification_flow_screen.dart'; 
-// import 'farmer/listing_flow_screen.dart'; 
 import 'market_screen.dart'; 
 import 'listing_form_screen.dart'; 
+import 'listing_detail_screen.dart';
 
-// --- MODEL COMMODITY POST (DIBIARKAN DI TOP-LEVEL) ---
 class CommodityPost {
   final String id;
   final String commodity; 
   final String location; 
   final String area; 
-  final int price; // Represents Price/Kg OR Total Borong Price depending on type
+  final int price;
   final double quantityTons; 
   final String contactName; 
   final String contactInfo;
-  final String type; // "Borong" or "Timbang"
+  final String type;
   bool isSold;
   int? soldPrice;
+  final double? rating;
+  final String? reviewText;
 
   CommodityPost({
     required this.id,
@@ -29,16 +29,12 @@ class CommodityPost {
     required this.quantityTons,
     required this.contactName,
     required this.contactInfo,
-    this.type = "Timbang", // Default
+    this.type = "Timbang",
     this.isSold = false,
     this.soldPrice,
-    this.rating,      // New Field
-    this.reviewText,  // New Field
+    this.rating,
+    this.reviewText,
   });
-  
-  // Rating Properties
-  final double? rating;
-  final String? reviewText;
 }
 
 class FarmerHomeScreen extends StatefulWidget {
@@ -50,10 +46,8 @@ class FarmerHomeScreen extends StatefulWidget {
 }
 
 class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
-  int _selectedIndex = 0; 
-  bool _showHistory = false; // Toggle for Active vs History
+  bool _showHistory = false;
   
-  // Data dummy (Stateful List)
   final List<CommodityPost> myCommodityPosts = [
     CommodityPost(
       id: '1',
@@ -71,12 +65,12 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
       commodity: 'Wortel Brastagi',
       location: 'Kec. Brastagi',
       area: '2 Hektar',
-      price: 75000000, // Borongan
+      price: 75000000,
       contactName: 'Agus Sutanto',
       contactInfo: 'WA: 0812xxxx',
       quantityTons: 10.0,
       type: "Borong",
-      isSold: true, // Mock as sold for history view
+      isSold: true,
       soldPrice: 70000000,
       rating: 5.0,
       reviewText: "Deal cepat, barang mantap.",
@@ -84,20 +78,19 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
   ];
 
   void _onItemTapped(int index) {
+  }
+  
+  void _addNewPost(CommodityPost post) {
     setState(() {
-      _selectedIndex = index;
+      myCommodityPosts.insert(0, post);
     });
   }
   
-  // Callback to add new post (Tidak digunakan lagi karena pakai API, tapi dibiarkan untuk menjaga dummy data)
-  void _addNewPost(CommodityPost post) {
-    setState(() {
-      myCommodityPosts.insert(0, post); // Add to top
-      _selectedIndex = 0; // Redirect to Home/Lapak
-    });
+  String _formatNumber(num number) {
+    if (number == 0) return "0";
+    String s = number.toString();
+    return s.replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
   }
-
-  // --- ACTIONS ---
 
   void _markAsSold(CommodityPost post) {
     showDialog(
@@ -186,7 +179,6 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Batal")),
            ElevatedButton(
              onPressed: () {
-                // Confirm Update
                 showDialog(
                   context: context,
                   builder: (ctx2) => AlertDialog(
@@ -196,7 +188,6 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                       TextButton(onPressed: () => Navigator.pop(ctx2), child: const Text("Tidak")),
                       ElevatedButton(
                         onPressed: () {
-                          // Apply Change
                           setState(() {
                             final index = myCommodityPosts.indexOf(post);
                             if (index != -1) {
@@ -215,8 +206,8 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                                 );
                             }
                           });
-                          Navigator.pop(ctx2); // Close Confirm
-                          Navigator.pop(ctx); // Close Edit Dialog
+                          Navigator.pop(ctx2);
+                          Navigator.pop(ctx);
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Harga berhasil diperbarui!")));
                         },
                         child: const Text("Ya, Simpan"),
@@ -295,22 +286,18 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
      );
   }
 
-
   @override
   Widget build(BuildContext context) {
-    // Filter Data
     final activePosts = myCommodityPosts.where((p) => !p.isSold).toList();
     final soldPosts = myCommodityPosts.where((p) => p.isSold).toList();
     final displayPosts = _showHistory ? soldPosts : activePosts;
 
-    // Unified Scroll Refactor for "Lapak Saya"
-    final Widget lapakSaya = SafeArea(
+    return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 120), // Space for Navbar
+        padding: const EdgeInsets.only(bottom: 120),
         child: Column(
           children: [
-             // 1. HEADER (Unified Style)
-             Container(
+            Container(
               width: double.infinity,
               decoration: const BoxDecoration(
                 color: Colors.white,
@@ -332,36 +319,35 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                     ),
                     const SizedBox(height: 16),
                     
-                    // Toggle Switch (Moved inside Header)
                     Container(
                       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.green)),
                       child: Row(
-                         mainAxisSize: MainAxisSize.min, // Wrap content
-                         children: [
-                           InkWell(
-                             onTap: () => setState(() => _showHistory = false),
-                             child: Container(
-                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                               decoration: BoxDecoration(
-                                 color: !_showHistory ? Colors.green : Colors.transparent,
-                                 borderRadius: BorderRadius.circular(20)
-                               ),
-                               child: Text("Aktif", style: TextStyle(color: !_showHistory ? Colors.white : Colors.green, fontWeight: FontWeight.bold)),
-                             ),
-                           ),
-                           InkWell(
-                             onTap: () => setState(() => _showHistory = true),
-                             child: Container(
-                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                               decoration: BoxDecoration(
-                                 color: _showHistory ? Colors.green : Colors.transparent,
-                                 borderRadius: BorderRadius.circular(20)
-                               ),
-                               child: Text("Riwayat", style: TextStyle(color: _showHistory ? Colors.white : Colors.green, fontWeight: FontWeight.bold)),
-                             ),
-                           ),
-                         ],
-                       ),
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          InkWell(
+                            onTap: () => setState(() => _showHistory = false),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: !_showHistory ? Colors.green : Colors.transparent,
+                                borderRadius: BorderRadius.circular(20)
+                              ),
+                              child: Text("Aktif", style: TextStyle(color: !_showHistory ? Colors.white : Colors.green, fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () => setState(() => _showHistory = true),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: _showHistory ? Colors.green : Colors.transparent,
+                                borderRadius: BorderRadius.circular(20)
+                              ),
+                              child: Text("Riwayat", style: TextStyle(color: _showHistory ? Colors.white : Colors.green, fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -370,7 +356,6 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
             
             const SizedBox(height: 20),
 
-            // 2. LIST CONTENT
             displayPosts.isEmpty
               ? Padding(
                   padding: const EdgeInsets.only(top: 100),
@@ -387,7 +372,7 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                 )
               : ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  physics: const NeverScrollableScrollPhysics(), // Scroll handled by Parent
+                  physics: const NeverScrollableScrollPhysics(),
                   shrinkWrap: true,
                   itemCount: displayPosts.length,
                   itemBuilder: (context, index) {
@@ -395,7 +380,6 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                     return Stack(
                       children: [
                         Container(
-                          // 1. Layer Shadow: Outer Container with Margin
                           margin: const EdgeInsets.only(bottom: 20),
                           decoration: BoxDecoration(
                             color: Colors.transparent,
@@ -415,7 +399,6 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                               ),
                             ],
                           ),
-                          // 2. Inner Content Layer with Stroke & Clip
                           child: Material(
                             color: Colors.white,
                             elevation: 0,
@@ -426,7 +409,6 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                             ),
                             child: Column(
                               children: [
-                                // Header (Colored Strip)
                                 Container(
                                   padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
                                   decoration: BoxDecoration(
@@ -436,7 +418,6 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                                   ),
                                   child: Row(
                                     children: [
-                                      // Tag Type
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                         decoration: BoxDecoration(
@@ -448,8 +429,7 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                                       ),
                                       const Spacer(),
                                       
-                                      // Grouped Action Buttons
-                                       if (_showHistory)
+                                      if (_showHistory)
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                           decoration: BoxDecoration(color: Colors.grey.shade700, borderRadius: BorderRadius.circular(8)),
@@ -458,7 +438,6 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                                       else 
                                         Row(
                                           children: [
-                                            // Update Price
                                             if (post.type == "Borong") ...[
                                                 InkWell(
                                                   onTap: () => _updateOfferPrice(post),
@@ -475,7 +454,6 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                                                 const SizedBox(width: 8),
                                             ],
                                             
-                                            // Edit Action
                                             InkWell(
                                               onTap: () => _editListing(post),
                                               child: Container(
@@ -494,13 +472,11 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                                   ),
                                 ),
                                 
-                                // Body Content
                                 Padding(
                                   padding: const EdgeInsets.all(16),
                                   child: Row(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      // Image
                                       Container(
                                         width: 90, height: 90,
                                         decoration: BoxDecoration(
@@ -519,7 +495,6 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                                       ),
                                       const SizedBox(width: 16),
                                       
-                                      // Details
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -527,7 +502,6 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                                             Text(post.commodity, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color(0xFF212121))),
                                             const SizedBox(height: 6),
                                             
-                                            // Attributes
                                             Row(
                                               children: [
                                                 Icon(Icons.scale, size: 14, color: Colors.grey.shade600),
@@ -565,7 +539,6 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                                   ),
                                 ),
                                 
-                                // Footer Button
                                 if (!_showHistory)
                                   Padding(
                                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -595,7 +568,6 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                           ),
                         ),
 
-                        // 3. RATING OVERLAY (If Reviewed)
                         if (_showHistory && post.rating != null)
                           Positioned(
                             top: 10, right: 10,
@@ -624,302 +596,5 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
         ),
       ),
     );
-
-
-    final Widget hargaPasar = const MarketScreen(); 
-    // PERBAIKAN: Hapus parameter onSubmit
-    final Widget buatIklan = const ListingFormScreen(); 
-    final Widget profil = const ProfileScreen();
-
-    final List<Widget> pages = [lapakSaya, hargaPasar, buatIklan, profil];
-    
-    return Scaffold(
-        resizeToAvoidBottomInset: false, // Prevents navbar from floating up with keyboard
-        backgroundColor: Theme.of(context).colorScheme.background,
-        // Make body extend behind navbar if needed, but Stack handles it.
-        body: Stack(
-          children: [
-            // Content Area
-            Positioned.fill(
-               // Standard page content, handled by specific widgets
-              child: pages[_selectedIndex]
-            ),
-
-            // Unified PS5 Navbar Widget
-            Positioned(
-              bottom: 0, left: 0, right: 0,
-              child: Ps5Navbar(
-                selectedIndex: _selectedIndex,
-                onItemTapped: _onItemTapped,
-              ),
-            ),
-          ],
-        ),
-    );
   }
-
-  // Helper for Thousand Separator (e.g. 1000000 -> 1.000.000)
-  String _formatNumber(num number) {
-    if (number == 0) return "0";
-    String s = number.toString();
-    // Regex to insert dots every 3 digits
-    return s.replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
-  }
-}
-
-// 🎮 UNIFIED PS5 NAVBAR COMPONENT (DIPINDAHKAN KE LUAR _FarmerHomeScreenState)
-class Ps5Navbar extends StatelessWidget {
-  final int selectedIndex;
-  final Function(int) onItemTapped;
-
-  const Ps5Navbar({
-    super.key,
-    required this.selectedIndex,
-    required this.onItemTapped,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final double screenWidth = MediaQuery.of(context).size.width;
-    final List<double> itemXPercents = [0.125, 0.375, 0.625, 0.875];
-    final Color navBgColor = const Color(0xFF1B5E20); 
-    final Color selectedColor = Colors.white;
-    final Color unselectedColor = Colors.white60;
-
-    // --- CURVE MATHEMATICS ---
-    // 1. Icon Curve (Top Layer)
-    double getIconCurveY(double xPercent) {
-      return 80 * (xPercent - 0.5) * (xPercent - 0.5) + 10;
-    }
-
-    // 2. Inner/Bottom Curve (Divider Layer)
-    double getInnerCurveY(double xPercent) {
-      return 60 * (xPercent * xPercent - xPercent) + 90;
-    }
-    
-    // 3. Dash Rotation (Calculated from Derivative)
-    // Left (x < 0.5) => Slope is Negative. Rotation should be Negative (CCW).
-    // Right (x > 0.5) => Slope is Positive. Rotation should be Positive (CW).
-    double getDashAngle(double xPercent) {
-        // (60.0 / Width) * (2x - 1)
-        // Note: Using a fixed reference width for consistent rotation feel across devices
-        // or using actual screenWidth for physical exactness. Using screenWidth is usage correct.
-        return (60.0 / screenWidth) * (2 * xPercent - 1);
-    }
-
-    final double selectedXPercent = itemXPercents[selectedIndex];
-    final double selectedIconY = getIconCurveY(selectedXPercent);
-    final double selectedDashY = getInnerCurveY(selectedXPercent);
-    final double selectedAngle = getDashAngle(selectedXPercent);
-
-    return SizedBox(
-      height: 110,
-      child: Stack(
-        alignment: Alignment.bottomCenter,
-        children: [
-          // 1. DUAL CURVE BACKGROUND
-          CustomPaint(
-            size: Size(screenWidth, 110),
-            painter: DualCurvePainter(color: navBgColor),
-          ),
-
-          // 2. DYNAMIC TEXT (Inside Bottom Curve)
-          Positioned(
-            bottom: 8, 
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              transitionBuilder: (Widget child, Animation<double> animation) {
-                return FadeTransition(opacity: animation, child: SlideTransition(
-                  position: Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(animation),
-                  child: child,
-                ));
-              },
-              child: Text(
-                _getLabelForIndex(selectedIndex),
-                key: ValueKey<int>(selectedIndex),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ),
-          ),
-
-          // 3. GLOW LIGHT (Under Icons)
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOutQuad,
-            left: (screenWidth * selectedXPercent) - 30, 
-            top: selectedIconY - 5, 
-            child: Container(
-              width: 60, height: 60,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                    BoxShadow(color: Colors.white.withOpacity(0.3), blurRadius: 20, spreadRadius: 1),
-                ]
-              ),
-            ),
-          ),
-          
-          // 4. CURVED LED DASH (Follows Tangent & Shape)
-          AnimatedPositioned(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutQuad,
-              left: (screenWidth * selectedXPercent) - 15, 
-              top: selectedDashY - 2, 
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOutQuad,
-                transform: Matrix4.rotationZ(selectedAngle),
-                alignment: Alignment.center,
-                child: CustomPaint(
-                  size: const Size(30, 4), 
-                  painter: CurvedDashPainter(),
-                ),
-              ),
-          ),
-
-          // 5. ICONS
-          ...List.generate(4, (index) {
-            final double xPercent = itemXPercents[index];
-            final double yOffset = getIconCurveY(xPercent);
-            final bool isSelected = selectedIndex == index;
-
-            return Positioned(
-              left: (screenWidth * xPercent) - 30, 
-              top: yOffset - 5,
-              child: GestureDetector(
-                onTap: () => onItemTapped(index),
-                behavior: HitTestBehavior.opaque,
-                child: Container(
-                  width: 60, height: 60,
-                  alignment: Alignment.center,
-                  child: AnimatedScale(
-                    scale: isSelected ? 1.2 : 1.0,
-                    duration: const Duration(milliseconds: 200),
-                    child: Icon(
-                      _getIconForIndex(index),
-                      color: isSelected ? selectedColor : unselectedColor,
-                      size: 28,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  IconData _getIconForIndex(int index) {
-    switch (index) {
-      case 0: return Icons.store;
-      case 1: return Icons.trending_up;
-      case 2: return Icons.add_box;
-      case 3: return Icons.person;
-      default: return Icons.circle;
-    }
-  }
-
-  String _getLabelForIndex(int index) {
-    switch (index) {
-      case 0: return "LAPAK SAYA";
-      case 1: return "PASAR";
-      case 2: return "IKLAN";
-      case 3: return "PROFIL";
-      default: return "";
-    }
-  }
-}
-
-
-// 🎨 DUAL CURVE PAINTER (DIPINDAHKAN KE LUAR)
-class DualCurvePainter extends CustomPainter {
-  final Color color;
-  DualCurvePainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..style = PaintingStyle.fill;
-    
-    // 1. LAYER BAWAH (Utama, Hijau Gelap) - Curve Besar
-    paint.color = color;
-    // Shadow
-    canvas.drawShadow(
-      Path()
-        ..moveTo(0, size.height)
-        ..lineTo(0, 30)
-        ..quadraticBezierTo(size.width/2, -10, size.width, 30)
-        ..lineTo(size.width, size.height)
-        ..close(), 
-      Colors.black.withOpacity(0.5), 8, true
-    );
-
-    final mainPath = Path()
-      ..moveTo(0, size.height)
-      ..lineTo(0, 30)
-      ..quadraticBezierTo(size.width/2, -10, size.width, 30)
-      ..lineTo(size.width, size.height)
-      ..close();
-    canvas.drawPath(mainPath, paint);
-
-    // 2. LAYER ATAS/DEPAN (Glassy/Lighter) - Curve Bawah untuk Teks
-    final innerPaint = Paint()
-      ..color = Colors.white.withOpacity(0.05) 
-      ..style = PaintingStyle.fill;
-
-    final innerPath = Path()
-      ..moveTo(0, size.height)
-      ..lineTo(0, size.height - 20)
-      ..quadraticBezierTo(size.width/2, size.height - 50, size.width, size.height - 20)
-      ..lineTo(size.width, size.height)
-      ..close();
-
-    canvas.drawPath(innerPath, innerPaint);
-    
-    // Optional: Border line for inner curve to make it pop
-    final borderPaint = Paint()
-      ..color = Colors.white.withOpacity(0.1)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-    canvas.drawPath(innerPath, borderPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-// 🎨 CURVED DASH PAINTER (DIPINDAHKAN KE LUAR)
-class CurvedDashPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round
-      ..maskFilter = const MaskFilter.blur(BlurStyle.solid, 2); 
-
-    final path = Path();
-    path.moveTo(0, size.height);
-    // Flat curve (almost straight but convex)
-    path.quadraticBezierTo(size.width / 2, 2.5, size.width, size.height);
-
-    // Also draw shadow
-    final shadowPaint = Paint()
-      ..color = Colors.white.withOpacity(0.6)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 6
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-      
-    canvas.drawPath(path, shadowPaint);
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

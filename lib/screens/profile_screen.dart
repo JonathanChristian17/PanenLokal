@@ -10,7 +10,10 @@ import 'farmer/farmer_reviews_screen.dart';
 import '../services/verification_service.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  // 🔥 TAMBAHAN: Callback untuk notify parent
+  final VoidCallback? onVerificationChanged;
+  
+  const ProfileScreen({super.key, this.onVerificationChanged});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -60,7 +63,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           errorMessage = e.toString();
         });
 
-        // Tampilkan dialog error sebelum redirect
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -85,6 +87,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         );
       }
+    }
+  }
+
+  // 🔥 TAMBAHAN: Fungsi refresh dengan callback ke parent
+  Future<void> _refreshAndNotify() async {
+    await _loadUserData();
+    
+    // Notify MainNavScreen bahwa ada perubahan
+    if (widget.onVerificationChanged != null) {
+      widget.onVerificationChanged!();
     }
   }
 
@@ -167,7 +179,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
       body: RefreshIndicator(
-        onRefresh: _loadUserData,
+        // 🔥 PERUBAHAN: Gunakan fungsi refresh baru
+        onRefresh: _refreshAndNotify,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.only(bottom: 100),
@@ -384,12 +397,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            Navigator.push(
+          onTap: () async {
+            // 🔥 PERUBAHAN: Tambah await dan refresh setelah kembali
+            await Navigator.push(
               context,
               MaterialPageRoute(
                   builder: (_) => const VerificationFormScreen()),
             );
+            
+            // Refresh data setelah submit verifikasi
+            if (mounted) {
+              await _refreshAndNotify();
+            }
           },
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -447,10 +466,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             );
 
             if (result == true && mounted) {
-              setState(() {
-                isLoading = true;
-              });
-              await _loadUserData();
+              // 🔥 PERUBAHAN: Gunakan refresh baru
+              await _refreshAndNotify();
             }
           },
         ),
@@ -472,12 +489,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 context,
                 MaterialPageRoute(
                     builder: (_) => const VerificationFormScreen()));
-            // Reload setelah kembali dari form verifikasi
+            
+            // 🔥 PERUBAHAN: Gunakan refresh baru
             if (mounted) {
-              setState(() {
-                isLoading = true;
-              });
-              await _loadUserData();
+              await _refreshAndNotify();
             }
           },
         ),

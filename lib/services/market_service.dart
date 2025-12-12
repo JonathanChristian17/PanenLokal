@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/market_price.dart';
 
 class MarketService {
-  static const String baseUrl = "http://127.0.0.1:8000/api"; 
+  static const String baseUrl = "http://localhost:8000/api"; 
 
   Future<List<MarketPrice>> getMarketPrices() async {
     final response = await http.get(Uri.parse("$baseUrl/market-prices"));

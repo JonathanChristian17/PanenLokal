@@ -7,8 +7,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 class ListingService {
   final Dio _dio = Dio();
   static const String _baseUrl = "http://127.0.0.1:8000/api";
-
-  ListingService() {
+  
+    ListingService() {
     _dio.options.baseUrl = _baseUrl;
     _dio.options.headers['Accept'] = 'application/json';
   }
@@ -113,7 +113,7 @@ class ListingService {
     }
   }
 
-  // FETCH MY LISTINGS - FIXED: Gunakan endpoint /listings
+  // FETCH MY LISTINGS
   Future<Map<String, dynamic>> getMyListings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -123,10 +123,10 @@ class ListingService {
         return {'success': false, 'message': 'Token tidak ditemukan'};
       }
 
-      print("Fetching listings with token: ${token.substring(0, 20)}...");
+      print("📡 Fetching listings with token: ${token.substring(0, 20)}...");
 
       final response = await _dio.get(
-        '/listings', // GANTI dari /listings/my-listings ke /listings
+        '/listings',
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
@@ -135,13 +135,13 @@ class ListingService {
         ),
       );
 
-      print("Response status: ${response.statusCode}");
-      print("Response data: ${response.data}");
+      print("✅ Response status: ${response.statusCode}");
+      print("📦 Response data: ${response.data}");
 
       return {'success': true, 'data': response.data};
       
     } on DioException catch (e) {
-      print("DioException: ${e.response?.data}");
+      print("❌ DioException: ${e.response?.data}");
       print("Status: ${e.response?.statusCode}");
       print("Message: ${e.message}");
       
@@ -150,18 +150,18 @@ class ListingService {
         'message': e.response?.data['message'] ?? 'Gagal mengambil data'
       };
     } catch (e) {
-      print("Exception: $e");
+      print("❌ Exception: $e");
       return {'success': false, 'message': 'Error: $e'};
     }
   }
 
-  // GET ALL ACTIVE LISTINGS (untuk buyer) - TANPA perlu token
+  // GET ALL ACTIVE LISTINGS (untuk buyer)
   Future<Map<String, dynamic>> getAllActiveListings() async {
     try {
-      print("Fetching all active listings...");
+      print("📡 Fetching all active listings...");
 
       final response = await _dio.get(
-        '/listings/active', // Endpoint khusus untuk public listings
+        '/listings/active',
         options: Options(
           headers: {
             'Accept': 'application/json',
@@ -169,13 +169,13 @@ class ListingService {
         ),
       );
 
-      print("Response status: ${response.statusCode}");
-      print("Active listings count: ${response.data['data']?.length ?? 0}");
+      print("✅ Response status: ${response.statusCode}");
+      print("📊 Active listings count: ${response.data['data']?.length ?? 0}");
 
       return {'success': true, 'data': response.data};
       
     } on DioException catch (e) {
-      print("DioException: ${e.response?.data}");
+      print("❌ DioException: ${e.response?.data}");
       print("Status: ${e.response?.statusCode}");
       
       return {
@@ -183,7 +183,7 @@ class ListingService {
         'message': e.response?.data['message'] ?? 'Gagal mengambil data'
       };
     } catch (e) {
-      print("Exception: $e");
+      print("❌ Exception: $e");
       return {'success': false, 'message': 'Error: $e'};
     }
   }
@@ -210,7 +210,7 @@ class ListingService {
       if (contactNumber != null) dataMap['contact_number'] = contactNumber;
       if (price != null) dataMap['price'] = price.toString();
 
-      print("Updating listing $listingId with data: $dataMap");
+      print("🔄 Updating listing $listingId with data: $dataMap");
 
       final response = await _dio.put(
         '/listings/$listingId',
@@ -226,7 +226,7 @@ class ListingService {
       return {'success': true, 'data': response.data};
       
     } on DioException catch (e) {
-      print("DioException: ${e.response?.data}");
+      print("❌ DioException: ${e.response?.data}");
       print("Status: ${e.response?.statusCode}");
       
       return {
@@ -234,7 +234,7 @@ class ListingService {
         'message': e.response?.data['message'] ?? 'Gagal update'
       };
     } catch (e) {
-      print("Exception: $e");
+      print("❌ Exception: $e");
       return {'success': false, 'message': 'Error: $e'};
     }
   }
@@ -252,7 +252,7 @@ class ListingService {
         return {'success': false, 'message': 'Token tidak ditemukan'};
       }
 
-      print("Marking listing $listingId as sold with price: $soldPrice");
+      print("💰 Marking listing $listingId as sold with price: $soldPrice");
 
       final response = await _dio.post(
         '/listings/$listingId/mark-sold',
@@ -270,7 +270,7 @@ class ListingService {
       return {'success': true, 'data': response.data};
       
     } on DioException catch (e) {
-      print("DioException: ${e.response?.data}");
+      print("❌ DioException: ${e.response?.data}");
       print("Status: ${e.response?.statusCode}");
       
       return {
@@ -278,12 +278,12 @@ class ListingService {
         'message': e.response?.data['message'] ?? 'Gagal tandai laku'
       };
     } catch (e) {
-      print("Exception: $e");
+      print("❌ Exception: $e");
       return {'success': false, 'message': 'Error: $e'};
     }
   }
 
-  // DELETE LISTING (Optional)
+  // DELETE LISTING
   Future<Map<String, dynamic>> deleteListing(String listingId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -306,7 +306,7 @@ class ListingService {
       return {'success': true, 'data': response.data};
       
     } on DioException catch (e) {
-      print("DioException: ${e.response?.data}");
+      print("❌ DioException: ${e.response?.data}");
       return {
         'success': false, 
         'message': e.response?.data['message'] ?? 'Gagal hapus listing'

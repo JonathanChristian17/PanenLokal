@@ -25,7 +25,6 @@ class VerificationService {
    return false;
   }
 
-  // 🔥 URL Diperbaiki ke 127.0.0.1
   var url = Uri.parse("http://127.0.0.1:8000/api/verification/submit");
 
   var request = http.MultipartRequest("POST", url);

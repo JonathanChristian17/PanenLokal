@@ -4,9 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:panen_lokal/models/verification_submission.dart';
 
 class AdminVerificationService {
-  // 🔥 Harap pastikan URL ini diakses dari Chrome atau Emulator!
-  // Jika Chrome, 127.0.0.1 (localhost) berfungsi.
-  // Jika Android Emulator, gunakan 10.0.2.2.
   final String _baseUrl = "http://127.0.0.1:8000/api";
 
   Future<List<VerificationSubmission>> fetchPendingSubmissions() async {

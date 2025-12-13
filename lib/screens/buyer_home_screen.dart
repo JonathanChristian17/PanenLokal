@@ -9,20 +9,25 @@ import 'market_screen.dart';
 import 'package:panen_lokal/models/user_model.dart';
 import 'package:panen_lokal/services/auth_service.dart';
 import 'listing_detail_screen.dart';
+import 'package:panen_lokal/services/listing_service.dart';
 
 class CommodityPost {
+  final String id;
   final String commodity;
   final String location;
   final String area;
-  final int price; 
+  final double price; 
   final double quantityTons;
   final String contactName;
   final String contactInfo;
   final String imagePath;
   final String description;
   final String pricingType;
+  final String category;
+  final List<String>? images;
 
   const CommodityPost({
+    required this.id,
     required this.commodity,
     required this.location,
     required this.area,
@@ -31,9 +36,32 @@ class CommodityPost {
     required this.contactName,
     required this.contactInfo,
     required this.imagePath,
+    required this.category,
     this.description = "Deskripsi belum ditambahkan oleh petani.",
     this.pricingType = 'kg',
+    this.images,
   });
+
+  // Factory method untuk convert dari API response
+  factory CommodityPost.fromJson(Map<String, dynamic> json) {
+    return CommodityPost(
+      id: json['id'].toString(),
+      commodity: json['title'] ?? '',
+      location: json['location'] ?? '',
+      area: json['area'] ?? '',
+      price: double.tryParse(json['price'].toString()) ?? 0.0,
+      quantityTons: double.tryParse(json['stock'].toString()) ?? 0.0,
+      contactName: json['contact_name'] ?? '',
+      contactInfo: json['contact_number'] ?? '',
+      category: json['category'] ?? 'sayur',
+      description: json['description'] ?? 'Deskripsi belum ditambahkan oleh petani.',
+      pricingType: json['type'] == 'Borong' ? 'total' : 'kg',
+      imagePath: json['images'] != null && (json['images'] as List).isNotEmpty 
+          ? json['images'][0] 
+          : 'assets/images/placeholder.jpg',
+      images: json['images'] != null ? List<String>.from(json['images']) : null,
+    );
+  }
 }
 
 class BuyerHomeScreen extends StatefulWidget {
@@ -47,13 +75,17 @@ class BuyerHomeScreen extends StatefulWidget {
 class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderStateMixin { 
   final TextEditingController _searchController = TextEditingController();
   final Set<String> _favoriteIds = {}; 
+  final ListingService _listingService = ListingService();
 
   String _userName = "User";
+  bool _isLoading = true;
+  List<CommodityPost> commodityPosts = [];
 
   @override
   void initState() {
     super.initState();
     _loadCurrentUser();
+    _loadAllListings();
   }
 
   void _loadCurrentUser() async {
@@ -64,6 +96,45 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
         setState(() {
           _userName = user.fullName.split(" ")[0]; 
         });
+      }
+    }
+  }
+
+  // Load semua listing aktif dari database
+  Future<void> _loadAllListings() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      final result = await _listingService.getAllActiveListings();
+      
+      if (result['success']) {
+        final dynamic responseData = result['data'];
+        final List<dynamic> data = responseData is Map && responseData.containsKey('data') 
+            ? responseData['data'] 
+            : responseData;
+        
+        setState(() {
+          commodityPosts = data.map((item) => CommodityPost.fromJson(item)).toList();
+          _isLoading = false;
+        });
+        
+        print("Loaded ${commodityPosts.length} active listings");
+        
+      } else {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result['message'] ?? 'Gagal memuat data'))
+          );
+        }
+      }
+    } catch (e) {
+      print("Error loading listings: $e");
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'))
+        );
       }
     }
   }
@@ -98,69 +169,6 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
   void _onItemTapped(int index) {
   }
 
-  final List<CommodityPost> commodityPosts = const [
-    CommodityPost(
-      commodity: 'Cabai Merah',
-      location: 'Berastagi',
-      area: '1 Hektar',
-      price: 52000,
-      quantityTons: 2.5,
-      contactName: 'Pak Ginting',
-      contactInfo: 'WA: 0812xxxxxx',
-      imagePath: 'assets/images/cabai.jpg', 
-      pricingType: 'kg',
-      description: "Cabai merah kualitas super, pedas dan segar. Panen raya minggu ini. Cocok untuk suplai pasar induk atau pabrik saos.",
-    ),
-    CommodityPost(
-      commodity: 'Tomat Merah',
-      location: 'Garut',
-      area: '1.5 Hektar',
-      price: 7500,
-      quantityTons: 8.0,
-      contactName: 'Agro Makmur',
-      contactInfo: 'Telp: 0821xxxxxx',
-      imagePath: 'assets/images/tomat.jpg',
-      pricingType: 'kg',
-      description: "Tomat sayur merah merona. Daging tebal, kadar air pas. Tahan simpan 1 minggu.",
-    ),
-     CommodityPost(
-      commodity: 'Kentang Dieng',
-      location: 'Dieng',
-      area: '2 Hektar',
-      price: 12000,
-      quantityTons: 15.0,
-      contactName: 'Bu Ani',
-      contactInfo: 'WA: 0813xxxxxx',
-      imagePath: 'assets/images/kentang.jpg',
-      pricingType: 'kg',
-      description: "Kentang kuning ukuran besar (Super). Bebas penyakit, kulit mulus. Hubungi untuk negosiasi partai besar.",
-    ),
-    CommodityPost(
-      commodity: 'Jagung Manis',
-      location: 'Lamongan',
-      area: '3 Hektar',
-      price: 45000000, 
-      quantityTons: 20.0, 
-      contactName: 'Pak Budi',
-      contactInfo: 'WA: 0815xxxxxx',
-      imagePath: 'assets/images/jagung_borongan.jpg', 
-      pricingType: 'total',
-      description: "Jual borongan satu ladang jagung hibrida. Kondisi tongkol besar, siap panen dalam 3 hari. Harga borongan bersih di tempat.",
-    ),
-    CommodityPost(
-      commodity: 'Jeruk Medan',
-      location: 'Kabanjahe',
-      area: '5000 m²',
-      price: 25000000, 
-      quantityTons: 4.0,
-      contactName: 'Simalem Farm',
-      contactInfo: 'WA: 0813xxxxxx',
-      imagePath: 'assets/images/jeruk_lahan.jpg', 
-      pricingType: 'total',
-      description: "Oper kebun jeruk siap petik. Estimasi 4 Ton. Kualitas manis air banyak. Harga nego ditempat sampai jadi.",
-    ),
-  ];
-
   Widget _buildTrendCard(String title, String trendType, Color color, IconData icon) {
     return Expanded(
       child: Container(
@@ -188,7 +196,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
   }
 
   Widget _buildHorizontalCommodityCard(BuildContext context, CommodityPost post) {
-    bool isFav = _favoriteIds.contains(post.commodity);
+    bool isFav = _favoriteIds.contains(post.id);
 
     return GestureDetector(
       onTap: () {
@@ -197,7 +205,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
           MaterialPageRoute(builder: (context) => ListingDetailScreen( 
             post: post, 
              isFavorite: isFav,
-             onToggleFavorite: () => _toggleFavorite(post.commodity),
+             onToggleFavorite: () => _toggleFavorite(post.id),
              onContacted: () {
                  setState(() {
                    _waitingForReview = true;
@@ -235,11 +243,32 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
                   ),
                   child: ClipRRect(
                     borderRadius: const BorderRadius.horizontal(left: Radius.circular(19)),
-                    child: Image.asset(
-                      post.imagePath,
-                      fit: BoxFit.cover,
-                      errorBuilder: (c, e, s) => Container(color: Colors.grey.shade200, child: const Icon(Icons.broken_image, color: Colors.grey)),
-                    ),
+                    child: post.images != null && post.images!.isNotEmpty
+                        ? Image.network(
+                            post.imagePath,
+                            fit: BoxFit.cover,
+                            errorBuilder: (c, e, s) => Container(
+                              color: Colors.grey.shade200, 
+                              child: const Icon(Icons.image, color: Colors.grey, size: 40)
+                            ),
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                color: Colors.grey.shade100,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                        : null,
+                                  ),
+                                ),
+                              );
+                            },
+                          )
+                        : Container(
+                            color: Colors.grey.shade200,
+                            child: const Icon(Icons.image, color: Colors.grey, size: 40),
+                          ),
                   ),
                 ),
                 Expanded(
@@ -339,7 +368,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: () => _toggleFavorite(post.commodity),
+                  onTap: () => _toggleFavorite(post.id),
                   borderRadius: BorderRadius.circular(20),
                   child: Padding(
                     padding: const EdgeInsets.all(6.0),
@@ -379,7 +408,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
             ListTile(
               leading: Image.asset('assets/images/whatsapp_logo.png', width: 24, errorBuilder: (c,o,s)=>const Icon(Icons.message, color: Colors.green)), 
               title: const Text("WhatsApp"),
-              subtitle: const Text("Chat langsung untuk nego"),
+              subtitle: Text(post.contactInfo),
               trailing: const Icon(Icons.arrow_forward_ios, size: 14),
               onTap: () {
                 Navigator.pop(ctx);
@@ -629,7 +658,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
       child: Container(
         color: Theme.of(context).colorScheme.background,
         child: RefreshIndicator(
-          onRefresh: () async { setState(() {}); await Future.delayed(const Duration(seconds: 1)); },
+          onRefresh: _loadAllListings,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: Padding(
@@ -705,16 +734,18 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
                         Row(
                           children: [
                              _buildTrendCard("Cabai Merah", "NAIK HARGA", Colors.red, Icons.trending_up),
-                             _buildTrendCard("Bawang Merah", "STABIL", Colors.blue, Icons.remove),
-                             _buildTrendCard("Tomat", "TURUN HARGA", Colors.green, Icons.trending_down),
+                            _buildTrendCard("Bawang Merah", "STABIL", Colors.blue, Icons.remove),
+                            _buildTrendCard("Tomat", "TURUN HARGA", Colors.green, Icons.trending_down),
                           ],
                         )
                       ],
                     ),
                   ),
 
+                  // Kartu ulasan pending (jika ada negosiasi selesai)
                   _buildPendingReviewCard(),
                   
+                  // Header List Rekomendasi
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
                     child: Row(
@@ -726,15 +757,26 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
                     ),
                   ),
                   
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: filteredPosts.length,
-                    itemBuilder: (context, index) {
-                      return _buildHorizontalCommodityCard(context, filteredPosts[index]);
-                    },
-                  ),
+                  // List Item (Dengan handling Loading State dari kode pertama)
+                  _isLoading
+                      ? const Padding(
+                          padding: EdgeInsets.only(top: 50),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      : filteredPosts.isEmpty
+                          ? const Padding(
+                              padding: EdgeInsets.only(top: 50),
+                              child: Center(child: Text("Belum ada data komoditas.")),
+                            )
+                          : ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              itemCount: filteredPosts.length,
+                              itemBuilder: (context, index) {
+                                return _buildHorizontalCommodityCard(context, filteredPosts[index]);
+                              },
+                            ),
                 ],
               ),
             ),

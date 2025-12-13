@@ -21,7 +21,7 @@ class CommodityPost {
   double? soldPrice;
   final double? rating;
   final String? reviewText;
-  final List<String>? images; // Tambah field images
+  final List<String>? images;
 
   CommodityPost({
     required this.id,
@@ -43,6 +43,15 @@ class CommodityPost {
 
   // Factory method untuk convert dari API response
   factory CommodityPost.fromJson(Map<String, dynamic> json) {
+
+     List<String>? imagesList;
+    if (json['images'] != null && json['images'] is List) {
+      imagesList = List<String>.from(json['images']);
+      print("📷 Images for ${json['title']}: $imagesList");
+    } else {
+      print("⚠️ No images found for ${json['title']}");
+    }
+
     return CommodityPost(
       id: json['id'].toString(),
       commodity: json['title'] ?? '',
@@ -502,10 +511,9 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                     itemCount: displayPosts.length,
                     itemBuilder: (context, index) {
                       final post = displayPosts[index];
-                      final imageUrl = post.images != null && post.images!.isNotEmpty 
+                      final imageUrl = (post.images != null && post.images!.isNotEmpty) 
                           ? post.images!.first 
                           : "https://via.placeholder.com/150";
-                      
                       return Stack(
                         children: [
                           Container(
@@ -607,20 +615,60 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Container(
-                                          width: 90, height: 90,
+                                          width: 90, 
+                                          height: 90,
                                           decoration: BoxDecoration(
                                             color: Colors.grey.shade100,
                                             borderRadius: BorderRadius.circular(16),
-                                            border: Border.all(color: Colors.grey.shade200),
-                                            image: DecorationImage(
-                                              image: NetworkImage(imageUrl), 
+                                            border: Border.all(color: Colors.grey.shade200, width: 1),
+                                          ),
+                                          child: ClipRRect(  // ✅ Gunakan ClipRRect + Image.network
+                                            borderRadius: BorderRadius.circular(16),
+                                            child: Image.network(
+                                              imageUrl,
                                               fit: BoxFit.cover,
+                                              errorBuilder: (context, error, stackTrace) {
+                                                print("❌ Error loading image: $imageUrl");
+                                                print("Error detail: $error");
+                                                return Container(
+                                                  color: Colors.grey.shade300,
+                                                  child: Column(
+                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                    children: [
+                                                      Icon(
+                                                        Icons.broken_image_outlined, 
+                                                        size: 32, 
+                                                        color: Colors.grey.shade600
+                                                      ),
+                                                      const SizedBox(height: 4),
+                                                      Text(
+                                                        "No Image", 
+                                                        style: TextStyle(
+                                                          fontSize: 9, 
+                                                          color: Colors.grey.shade600
+                                                        )
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              },
+                                              loadingBuilder: (context, child, loadingProgress) {
+                                                if (loadingProgress == null) return child;
+                                                return Center(
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    value: loadingProgress.expectedTotalBytes != null
+                                                        ? loadingProgress.cumulativeBytesLoaded / 
+                                                          loadingProgress.expectedTotalBytes!
+                                                        : null,
+                                                  ),
+                                                );
+                                              },
                                             ),
                                           ),
                                         ),
                                         const SizedBox(width: 16),
-                                        
-                                        Expanded(
+                                          Expanded(
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [

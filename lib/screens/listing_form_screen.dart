@@ -145,7 +145,7 @@ void _finalizeSubmission() async {
         title: _commodityController.text.trim(),
         description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
         location: _locationController.text.trim(),
-        area: areaText, // Kirim tanpa "m²" 
+        area: areaText,
         price: finalPrice,
         stock: finalStock,
         category: _selectedCategory,
@@ -155,33 +155,50 @@ void _finalizeSubmission() async {
         images: finalImages, 
       );
 
-      if (result['success'] == true) {
-        // Sukses - Tutup dialog loading jika ada, lalu tampilkan sukses
-        if (!mounted) return;
-        
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (dialogContext) => AlertDialog(
-            icon: const Icon(Icons.check_circle, color: Colors.green, size: 60),
-            title: const Text("Berhasil Dipublikasikan!"),
-            content: const Text("Iklan ladang Anda kini aktif dan dapat dilihat oleh pembeli."),
-            actions: [
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(dialogContext).pop(); // Tutup dialog sukses
-                  Navigator.of(context).pop(true); // ✅ Kembali dengan result true
-                },
-                child: const Text("Selesai")
-              )
-            ],
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Gagal: ${result['message']}"), backgroundColor: Colors.red),
-        );
-      }
+          if (result['success'] == true) {
+            if (!mounted) return;
+            
+            // Reset form dulu
+            _formKey.currentState?.reset();
+            _commodityController.clear();
+            _descriptionController.clear();
+            _locationController.clear();
+            _areaController.clear();
+            _priceController.clear();
+            _stockController.clear();
+            _contactNameController.clear();
+            _contactNumberController.clear();
+            setState(() {
+              _pickedImageItems.clear();
+              _selectedCategory = "sayur";
+              _salesMethod = "Timbang";
+            });
+            
+            // Tampilkan dialog sukses
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (dialogContext) => AlertDialog(
+                icon: const Icon(Icons.check_circle, color: Colors.green, size: 60),
+                title: const Text("Berhasil Dipublikasikan!"),
+                content: const Text("Iklan ladang Anda kini aktif dan dapat dilihat oleh pembeli."),
+                actions: [
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(dialogContext).pop(); // Hanya tutup dialog
+                    },
+                    child: const Text("Oke")
+                  )
+                ],
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Gagal: ${result['message']}"), backgroundColor: Colors.red),
+            );
+          }
+
+      
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
@@ -190,7 +207,6 @@ void _finalizeSubmission() async {
       setState(() { _isLoading = false; });
     }
   }
-
   Widget _buildImageWidget(PickedImageItem item) {
     if (kIsWeb) {
       return Image.network(

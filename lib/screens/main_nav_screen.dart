@@ -1,6 +1,6 @@
-// lib/screens/main_nav_screen.dart
 import 'package:flutter/material.dart';
 import 'package:panen_lokal/models/user_model.dart';
+import 'package:panen_lokal/screens/admin_user_management_screen.dart';
 import 'package:panen_lokal/services/auth_service.dart';
 
 import 'buyer_home_screen.dart';
@@ -10,6 +10,7 @@ import 'listing_form_screen.dart';
 import 'profile_screen.dart';
 import 'admin_verification_screen.dart';
 import 'request_screen.dart';
+import 'admin_user_management_screen.dart';
 
 class NavPageContent {
   final String label;
@@ -66,25 +67,30 @@ class _MainNavScreenState extends State<MainNavScreen> {
   }
 
   List<NavPageContent> _getNavConfig(String role, bool isVerified) {
-    final Widget lapakSayaPage = const FarmerHomeScreen(title: 'Lapak Saya');
+    // Inisialisasi semua halaman
     final Widget berandaPage = const BuyerHomeScreen(title: 'Beranda');
+    final Widget lapakSayaPage = const FarmerHomeScreen(title: 'Lapak Saya');
     final Widget pasarPage = const MarketScreen();
     final Widget listingPage = const ListingFormScreen();
     final Widget verifikasiPage = const AdminVerificationScreen();
+    final Widget kelolaUserPage = const AdminUserManagementScreen();
     final Widget profilPage = ProfileScreen(onVerificationChanged: refreshUserData);
     final Widget favoritPage = const RequestScreen();
 
     if (role == 'admin') {
+      // ADMIN: 5 Menu (BERANDA, PASAR, VERIFIKASI, FAVORIT, PROFIL)
       return [
-        NavPageContent(label: 'LAPAK SAYA', icon: Icons.store, page: lapakSayaPage),
+        NavPageContent(label: 'BERANDA', icon: Icons.home, page: berandaPage),
         NavPageContent(label: 'PASAR', icon: Icons.trending_up, page: pasarPage),
-        NavPageContent(label: 'IKLAN', icon: Icons.add_box, page: listingPage),
         NavPageContent(label: 'VERIFIKASI', icon: Icons.verified_user, page: verifikasiPage),
+        NavPageContent(label: 'KELOLA USER', icon: Icons.people, page: kelolaUserPage),
         NavPageContent(label: 'FAVORIT', icon: Icons.favorite, page: favoritPage),
         NavPageContent(label: 'PROFIL', icon: Icons.person, page: profilPage),
       ];
     } else if (role == 'farmer' && isVerified) {
+      // FARMER VERIFIED: 6 Menu (BERANDA, LAPAK SAYA, PASAR, IKLAN, FAVORIT, PROFIL)
       return [
+        NavPageContent(label: 'BERANDA', icon: Icons.home, page: berandaPage),
         NavPageContent(label: 'LAPAK SAYA', icon: Icons.store, page: lapakSayaPage),
         NavPageContent(label: 'PASAR', icon: Icons.trending_up, page: pasarPage),
         NavPageContent(label: 'IKLAN', icon: Icons.add_box, page: listingPage),
@@ -92,6 +98,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
         NavPageContent(label: 'PROFIL', icon: Icons.person, page: profilPage),
       ];
     } else {
+      // BUYER atau FARMER belum verified: 4 Menu
       return [
         NavPageContent(label: 'BERANDA', icon: Icons.home, page: berandaPage),
         NavPageContent(label: 'PASAR', icon: Icons.trending_up, page: pasarPage),
@@ -123,7 +130,6 @@ class _MainNavScreenState extends State<MainNavScreen> {
       backgroundColor: const Color(0xFFF9FBE7),
       body: Stack(
         children: [
-          // IMPORTANT: wrap page with Material so TextField/ListTile/Inkwell have a material ancestor.
           Positioned.fill(
             child: Material(
               color: Colors.transparent,
@@ -205,10 +211,13 @@ class Ps5Navbar extends StatelessWidget {
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
               transitionBuilder: (Widget child, Animation<double> animation) {
-                return FadeTransition(opacity: animation, child: SlideTransition(
-                  position: Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(animation),
-                  child: child,
-                ));
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(animation),
+                    child: child,
+                  ),
+                );
               },
               child: Text(
                 labels[selectedIndex],
@@ -229,7 +238,8 @@ class Ps5Navbar extends StatelessWidget {
             left: (screenWidth * selectedXPercent) - 30,
             top: selectedIconY - 5,
             child: Container(
-              width: 60, height: 60,
+              width: 60,
+              height: 60,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 boxShadow: [
@@ -268,7 +278,8 @@ class Ps5Navbar extends StatelessWidget {
                 onTap: () => onItemTapped(index),
                 behavior: HitTestBehavior.opaque,
                 child: Container(
-                  width: 60, height: 60,
+                  width: 60,
+                  height: 60,
                   alignment: Alignment.center,
                   child: AnimatedScale(
                     scale: isSelected ? 1.2 : 1.0,
@@ -300,30 +311,38 @@ class DualCurvePainter extends CustomPainter {
       Path()
         ..moveTo(0, size.height)
         ..lineTo(0, 30)
-        ..quadraticBezierTo(size.width/2, -10, size.width, 30)
+        ..quadraticBezierTo(size.width / 2, -10, size.width, 30)
         ..lineTo(size.width, size.height)
         ..close(),
-      Colors.black.withOpacity(0.5), 8, true,
+      Colors.black.withOpacity(0.5),
+      8,
+      true,
     );
 
     final mainPath = Path()
       ..moveTo(0, size.height)
       ..lineTo(0, 30)
-      ..quadraticBezierTo(size.width/2, -10, size.width, 30)
+      ..quadraticBezierTo(size.width / 2, -10, size.width, 30)
       ..lineTo(size.width, size.height)
       ..close();
     canvas.drawPath(mainPath, paint);
 
     final innerPaint = Paint()
-      ..color = Colors.white.withOpacity(0.05)..style = PaintingStyle.fill;
+      ..color = Colors.white.withOpacity(0.05)
+      ..style = PaintingStyle.fill;
     final innerPath = Path()
       ..moveTo(0, size.height)
       ..lineTo(0, size.height - 20)
-      ..quadraticBezierTo(size.width/2, size.height - 50, size.width, size.height - 20)
+      ..quadraticBezierTo(size.width / 2, size.height - 50, size.width, size.height - 20)
       ..lineTo(size.width, size.height)
       ..close();
     canvas.drawPath(innerPath, innerPaint);
-    canvas.drawPath(innerPath, Paint()..color = Colors.white.withOpacity(0.1)..style = PaintingStyle.stroke..strokeWidth = 1);
+    canvas.drawPath(
+        innerPath,
+        Paint()
+          ..color = Colors.white.withOpacity(0.1)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1);
   }
 
   @override
@@ -333,11 +352,22 @@ class DualCurvePainter extends CustomPainter {
 class CurvedDashPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white..style = PaintingStyle.stroke..strokeWidth = 3..strokeCap = StrokeCap.round..maskFilter = const MaskFilter.blur(BlurStyle.solid, 2);
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.solid, 2);
     final path = Path();
     path.moveTo(0, size.height);
     path.quadraticBezierTo(size.width / 2, 2.5, size.width, size.height);
-    canvas.drawPath(path, Paint()..color = Colors.white.withOpacity(0.6)..style = PaintingStyle.stroke..strokeWidth = 6..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6));
+    canvas.drawPath(
+        path,
+        Paint()
+          ..color = Colors.white.withOpacity(0.6)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 6
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6));
     canvas.drawPath(path, paint);
   }
 

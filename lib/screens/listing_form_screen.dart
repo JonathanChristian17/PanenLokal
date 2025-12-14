@@ -4,6 +4,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb; 
 import 'package:image_picker/image_picker.dart'; 
 import 'package:panen_lokal/services/listing_service.dart';
+import 'package:latlong2/latlong.dart';
+import 'map_picker_screen.dart';
+
 
 // --- FORMATTER CLASS ---
 class ThousandsSeparatorInputFormatter extends TextInputFormatter {
@@ -309,7 +312,7 @@ void _finalizeSubmission() async {
       backgroundColor: Colors.grey.shade50,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 30),
+          padding: const EdgeInsets.only(bottom: 140),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -396,9 +399,19 @@ void _finalizeSubmission() async {
                             ),
                             child: Center(
                               child: ElevatedButton.icon(
-                                onPressed: () { 
-                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Google Maps Picker Placeholder")));
-                                  }, 
+                                onPressed: () async {
+                                  final result = await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => const MapPickerScreen()),
+                                  );
+
+                                  if (result != null && result is LatLng) {
+                                    setState(() {
+                                      _locationController.text =
+                                          "${result.latitude.toStringAsFixed(6)}, ${result.longitude.toStringAsFixed(6)}";
+                                    });
+                                  }
+                                },
                                 icon: const Icon(Icons.map_outlined, color: Colors.green), 
                                 label: const Text("Pilih Titik Lokasi", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
                                 style: ElevatedButton.styleFrom(

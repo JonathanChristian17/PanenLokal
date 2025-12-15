@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 // import 'package:panen_lokal/models/community_data.dart'; // Jika CommodityPost di file ini
-import 'buyer_home_screen.dart'; // Import untuk CommodityPost
+import 'buyer_home_screen.dart'; // Import untuk CommodityPost\
+import 'package:url_launcher/url_launcher.dart';
 
 // 📄 LISTING DETAIL SCREEN (Fully Enhanced)
 class ListingDetailScreen extends StatefulWidget {
@@ -37,29 +38,31 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     return value.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
   }
 
-  void _contactFarmer(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Hubungi Petani"),
-        content: Text("Buka WhatsApp ke ${widget.post.contactInfo}?"),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Batal")),
-          ElevatedButton(
-            onPressed: () { 
-               Navigator.pop(ctx);
-               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Membuka WhatsApp..."), backgroundColor: Colors.green));
-               // Trigger Callback
-               if (widget.onContacted != null) {
-                 widget.onContacted!();
-               }
-            }, 
-            child: const Text("Lanjut")
-          ),
-        ],
-      )
-    );
+  Future<void> _contactFarmer(BuildContext context) async {
+  String cleanedNumber =
+      widget.post.contactInfo.replaceAll(RegExp(r'[^0-9]'), '');
+
+  if (cleanedNumber.startsWith('0')) {
+    cleanedNumber = '62${cleanedNumber.substring(1)}';
   }
+
+  final message = Uri.encodeComponent(
+      "Halo, saya tertarik dengan ${widget.post.commodity} di PanenLokal.");
+
+  final Uri whatsappUri =
+      Uri.parse("https://wa.me/$cleanedNumber?text=$message");
+
+  await launchUrl(
+    whatsappUri,
+    mode: LaunchMode.externalApplication,
+  );
+
+  // 🔔 Trigger callback ke BuyerHomeScreen
+  if (widget.onContacted != null) {
+    widget.onContacted!();
+  }
+}
+
 
   Widget _buildInfoRow(IconData icon, String label, String value, {bool isBold = false}) {
     return Padding(
@@ -89,7 +92,21 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.asset(widget.post.imagePath, fit: BoxFit.cover),
+                  Image.network(
+                    widget.post.imagePath,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey.shade300,
+                        child: const Icon(Icons.broken_image, size: 40),
+                      );
+                    },
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const Center(child: CircularProgressIndicator());
+                    },
+                  ),
+                  
                   Container(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black.withOpacity(0.6)]))),
                   Positioned(
                     bottom: 20, left: 20,

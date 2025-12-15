@@ -5,6 +5,7 @@ import '../models/community_data.dart';
 import 'profile_screen.dart';
 import 'request_screen.dart';
 import 'notification_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'market_screen.dart'; 
 import 'package:panen_lokal/models/user_model.dart';
 import 'package:panen_lokal/services/auth_service.dart';
@@ -88,6 +89,34 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
     _loadAllListings();
   }
 
+  Future<void> _openWhatsApp(String phoneNumber, String commodity) async {
+  // Bersihkan nomor (hapus spasi & simbol)
+  String cleanedNumber = phoneNumber
+      .replaceAll(RegExp(r'[^0-9]'), '');
+
+  // Pastikan pakai kode negara Indonesia
+  if (cleanedNumber.startsWith('0')) {
+    cleanedNumber = '62${cleanedNumber.substring(1)}';
+  }
+
+  final message =
+      Uri.encodeComponent("Halo, saya tertarik dengan $commodity di PanenLokal.");
+
+  final whatsappUrl = Uri.parse(
+    "https://wa.me/$cleanedNumber?text=$message"
+  );
+
+  if (await canLaunchUrl(whatsappUrl)) {
+    await launchUrl(
+      whatsappUrl,
+      mode: LaunchMode.externalApplication,
+    );
+  } else {
+    throw 'Tidak dapat membuka WhatsApp';
+  }
+}
+
+
   void _loadCurrentUser() async {
     UserModel? user = await AuthService.getLocalUser();
     
@@ -99,6 +128,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
       }
     }
   }
+
 
   // Load semua listing aktif dari database
   Future<void> _loadAllListings() async {
@@ -241,6 +271,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
                      borderRadius: const BorderRadius.horizontal(left: Radius.circular(19)),
                      border: Border(right: BorderSide(color: Colors.grey.shade200)),  
                   ),
+                  
                   child: ClipRRect(
                     borderRadius: const BorderRadius.horizontal(left: Radius.circular(19)),
                     child: post.images != null && post.images!.isNotEmpty
@@ -342,7 +373,14 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
                               ),
                             ),
                             ElevatedButton(
-                              onPressed: () => _contactFarmer(context, post),
+                              onPressed: () {
+                                _openWhatsApp(post.contactInfo, post.commodity);
+
+                                setState(() {
+                                  _waitingForReview = true;
+                                  _pendingReviewPost = post;
+                                });
+                              },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF2E7D32), 
                                 foregroundColor: Colors.white,
@@ -777,12 +815,17 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
                                 return _buildHorizontalCommodityCard(context, filteredPosts[index]);
                               },
                             ),
+                            
                 ],
               ),
+              
             ),
+            
           ),
         ),
       ),
+      
     );
   }
+  
 }

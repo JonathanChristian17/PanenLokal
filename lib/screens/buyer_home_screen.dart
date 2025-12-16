@@ -11,6 +11,8 @@ import 'package:panen_lokal/models/user_model.dart';
 import 'package:panen_lokal/services/auth_service.dart';
 import 'listing_detail_screen.dart';
 import 'package:panen_lokal/services/listing_service.dart';
+import 'package:panen_lokal/services/transaction_service.dart';
+import 'package:panen_lokal/models/transaction_model.dart';
 
 class CommodityPost {
   final String id;
@@ -77,6 +79,9 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
   final TextEditingController _searchController = TextEditingController();
   final Set<String> _favoriteIds = {}; 
   final ListingService _listingService = ListingService();
+  bool _showDealConfirmation = false;
+  CommodityPost? _contactedPost;
+
 
   String _userName = "User";
   bool _isLoading = true;
@@ -89,32 +94,67 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
     _loadAllListings();
   }
 
-  Future<void> _openWhatsApp(String phoneNumber, String commodity) async {
-  // Bersihkan nomor (hapus spasi & simbol)
-  String cleanedNumber = phoneNumber
-      .replaceAll(RegExp(r'[^0-9]'), '');
+  final TransactionService _transactionService = TransactionService();
 
-  // Pastikan pakai kode negara Indonesia
-  if (cleanedNumber.startsWith('0')) {
-    cleanedNumber = '62${cleanedNumber.substring(1)}';
+ // ✅ DIPERBAIKI: Create Transaction dengan error handling
+  Future<void> _createTransaction(CommodityPost post) async {
+    try {
+      final result = await _transactionService.createTransaction(post.id);
+      
+      if (result['success'] == true) {
+        if (mounted) {
+          setState(() {
+            _showDealConfirmation = true;
+            _contactedPost = post;
+          });
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result['message'] ?? "Gagal memulai transaksi")),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Error: ${e.toString().replaceAll('Exception: ', '')}"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
-  final message =
-      Uri.encodeComponent("Halo, saya tertarik dengan $commodity di PanenLokal.");
 
-  final whatsappUrl = Uri.parse(
-    "https://wa.me/$cleanedNumber?text=$message"
-  );
+ Future<void> _openWhatsApp(String phoneNumber, String commodity) async {
+    String cleanedNumber = phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
 
-  if (await canLaunchUrl(whatsappUrl)) {
-    await launchUrl(
-      whatsappUrl,
-      mode: LaunchMode.externalApplication,
+    if (cleanedNumber.startsWith('0')) {
+      cleanedNumber = '62${cleanedNumber.substring(1)}';
+    }
+
+    final message = Uri.encodeComponent(
+      "Halo, saya tertarik dengan $commodity di PanenLokal."
     );
-  } else {
-    throw 'Tidak dapat membuka WhatsApp';
+
+    final whatsappUrl = Uri.parse("https://wa.me/$cleanedNumber?text=$message");
+
+    try {
+      if (await canLaunchUrl(whatsappUrl)) {
+        await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+      } else {
+        throw 'Tidak dapat membuka WhatsApp';
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
   }
-}
 
 
   void _loadCurrentUser() async {
@@ -129,6 +169,56 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
     }
   }
 
+  // ✅ DIPERBAIKI: Konfirmasi kontak dengan loading indicator
+  void _confirmContact(BuildContext context, CommodityPost post) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Hubungi Penjual"),
+        content: const Text(
+          "Anda akan menghubungi penjual melalui WhatsApp.\n"
+          "Transaksi akan dicatat sebagai sedang negosiasi."
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Batal"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+
+              // ✅ Show loading
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              );
+
+              try {
+                await _createTransaction(post); // ✅ INSERT DB
+                
+                if (mounted) {
+                  Navigator.pop(context); // Close loading
+                  await _openWhatsApp(post.contactInfo, post.commodity); // ✅ WA
+                }
+              } catch (e) {
+                if (mounted) {
+                  Navigator.pop(context); // Close loading
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2E7D32),
+            ),
+            child: const Text("Hubungi"),
+          ),
+        ],
+      ),
+    );
+  }
 
   // Load semua listing aktif dari database
   Future<void> _loadAllListings() async {
@@ -221,9 +311,83 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
             Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87), maxLines: 1, overflow: TextOverflow.ellipsis),
           ],
         ),
+        // ✅ KONFIRMASI SETELAH HUBUNGI
+
       ),
     );
   }
+
+    Widget _buildDealConfirmationCard() {
+    if (!_showDealConfirmation || _contactedPost == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.green),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            )
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: const [
+                Icon(Icons.question_answer, color: Colors.green),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    "Apakah transaksi sudah selesai?",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                )
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      setState(() {
+                        _showDealConfirmation = false;
+                        _contactedPost = null;
+                      });
+                    },
+                    child: const Text("Belum"),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _showDealConfirmation = false;
+                        _waitingForReview = true;
+                        _pendingReviewPost = _contactedPost;
+                        _contactedPost = null;
+                      });
+                    },
+                    child: const Text("Sudah"),
+                  ),
+                ),
+              ],
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
 
   Widget _buildHorizontalCommodityCard(BuildContext context, CommodityPost post) {
     bool isFav = _favoriteIds.contains(post.id);
@@ -238,8 +402,8 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
              onToggleFavorite: () => _toggleFavorite(post.id),
              onContacted: () {
                  setState(() {
-                   _waitingForReview = true;
-                   _pendingReviewPost = post;
+                    _showDealConfirmation = true;
+                    _contactedPost = post;
                  });
              },
           )),
@@ -302,6 +466,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
                           ),
                   ),
                 ),
+
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.all(12),
@@ -374,13 +539,9 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
                             ),
                             ElevatedButton(
                               onPressed: () {
-                                _openWhatsApp(post.contactInfo, post.commodity);
-
-                                setState(() {
-                                  _waitingForReview = true;
-                                  _pendingReviewPost = post;
-                                });
+                                _confirmContact(context, post);
                               },
+
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF2E7D32), 
                                 foregroundColor: Colors.white,
@@ -781,7 +942,12 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> with TickerProviderSt
                   ),
 
                   // Kartu ulasan pending (jika ada negosiasi selesai)
+                  // ✅ KONFIRMASI SETELAH HUBUNGI
+                  _buildDealConfirmationCard(),
+
+                  // ✅ ULASAN (SETELAH KLIK "SUDAH")
                   _buildPendingReviewCard(),
+
                   
                   // Header List Rekomendasi
                   Padding(

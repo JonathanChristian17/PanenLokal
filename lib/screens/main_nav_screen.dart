@@ -9,6 +9,7 @@ import 'market_screen.dart';
 import 'listing_form_screen.dart';
 import 'profile_screen.dart';
 import 'admin_verification_screen.dart';
+import 'transaction_screen.dart';
 import 'request_screen.dart';
 import 'admin_user_management_screen.dart';
 
@@ -72,6 +73,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
     final Widget lapakSayaPage = const FarmerHomeScreen(title: 'Lapak Saya');
     final Widget pasarPage = const MarketScreen();
     final Widget listingPage = const ListingFormScreen();
+    final Widget transaksiPage = const TransactionScreen();
     final Widget verifikasiPage = const AdminVerificationScreen();
     final Widget kelolaUserPage = const AdminUserManagementScreen();
     final Widget profilPage = ProfileScreen(onVerificationChanged: refreshUserData);
@@ -94,6 +96,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
         NavPageContent(label: 'LAPAK SAYA', icon: Icons.store, page: lapakSayaPage),
         NavPageContent(label: 'PASAR', icon: Icons.trending_up, page: pasarPage),
         NavPageContent(label: 'IKLAN', icon: Icons.add_box, page: listingPage),
+        NavPageContent(label: 'TRANSAKSI', icon: Icons.receipt_long, page: transaksiPage),
         NavPageContent(label: 'FAVORIT', icon: Icons.favorite, page: favoritPage),
         NavPageContent(label: 'PROFIL', icon: Icons.person, page: profilPage),
       ];
@@ -102,6 +105,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
       return [
         NavPageContent(label: 'BERANDA', icon: Icons.home, page: berandaPage),
         NavPageContent(label: 'PASAR', icon: Icons.trending_up, page: pasarPage),
+        NavPageContent(label: 'TRANSAKSI', icon: Icons.receipt_long, page: transaksiPage),
         NavPageContent(label: 'FAVORIT', icon: Icons.favorite, page: favoritPage),
         NavPageContent(label: 'PROFIL', icon: Icons.person, page: profilPage),
       ];

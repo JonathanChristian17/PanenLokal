@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'profile_screen.dart';
 import 'request_screen.dart';
-import 'market_screen.dart'; 
-import 'listing_form_screen.dart'; 
+import 'market_screen.dart';
+import 'listing_form_screen.dart';
 import 'listing_detail_screen.dart';
 import 'package:panen_lokal/services/listing_service.dart';
+import '../widgets/notification_button.dart';
 
 class CommodityPost {
   final String id;
-  final String commodity; 
-  final String location; 
-  final String area; 
+  final String commodity;
+  final String location;
+  final String area;
   final double price;
-  final double quantityTons; 
-  final String contactName; 
+  final double quantityTons;
+  final String contactName;
   final String contactInfo;
   final String type;
   final String category;
@@ -33,7 +34,7 @@ class CommodityPost {
     required this.contactName,
     required this.contactInfo,
     required this.category,
-    this.type = "Timbang",
+    this.type = 'Timbang',
     this.isSold = false,
     this.soldPrice,
     this.rating,
@@ -41,17 +42,7 @@ class CommodityPost {
     this.images,
   });
 
-  // Factory method untuk convert dari API response
   factory CommodityPost.fromJson(Map<String, dynamic> json) {
-
-     List<String>? imagesList;
-    if (json['images'] != null && json['images'] is List) {
-      imagesList = List<String>.from(json['images']);
-      print("📷 Images for ${json['title']}: $imagesList");
-    } else {
-      print("⚠️ No images found for ${json['title']}");
-    }
-
     return CommodityPost(
       id: json['id'].toString(),
       commodity: json['title'] ?? '',
@@ -63,9 +54,13 @@ class CommodityPost {
       contactInfo: json['contact_number'] ?? '',
       category: json['category'] ?? '',
       type: json['type'] ?? 'Timbang',
-      // PENTING: Parse is_sold dengan benar
-      isSold: json['is_sold'] == true || json['is_sold'] == 1 || json['is_sold'] == '1',
-      soldPrice: json['sold_price'] != null ? double.tryParse(json['sold_price'].toString()) : null,
+      isSold:
+          json['is_sold'] == true ||
+          json['is_sold'] == 1 ||
+          json['is_sold'] == '1',
+      soldPrice: json['sold_price'] != null
+          ? double.tryParse(json['sold_price'].toString())
+          : null,
       images: json['images'] != null ? List<String>.from(json['images']) : null,
     );
   }
@@ -94,30 +89,32 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
   // Load data dari database
   Future<void> _loadMyListings() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final result = await _listingService.getMyListings();
-      
+
       if (result['success']) {
         final dynamic responseData = result['data'];
-        final List<dynamic> data = responseData is Map && responseData.containsKey('data') 
-            ? responseData['data'] 
+        final List<dynamic> data =
+            responseData is Map && responseData.containsKey('data')
+            ? responseData['data']
             : responseData;
-        
+
         setState(() {
-          myCommodityPosts = data.map((item) => CommodityPost.fromJson(item)).toList();
+          myCommodityPosts = data
+              .map((item) => CommodityPost.fromJson(item))
+              .toList();
           _isLoading = false;
         });
-        
+
         print("Loaded ${myCommodityPosts.length} listings");
         print("Active: ${myCommodityPosts.where((p) => !p.isSold).length}");
         print("Sold: ${myCommodityPosts.where((p) => p.isSold).length}");
-        
       } else {
         setState(() => _isLoading = false);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result['message'] ?? 'Gagal memuat data'))
+            SnackBar(content: Text(result['message'] ?? 'Gagal memuat data')),
           );
         }
       }
@@ -125,9 +122,9 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
       print("Error loading listings: $e");
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'))
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -136,11 +133,9 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
   void _openListingForm() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const ListingFormScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const ListingFormScreen()),
     );
-    
+
     // Jika berhasil create listing, reload data
     if (result == true) {
       print("Listing created successfully, reloading data...");
@@ -148,19 +143,21 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
     }
   }
 
-  void _onItemTapped(int index) {
-  }
-  
+  void _onItemTapped(int index) {}
+
   void _addNewPost(CommodityPost post) {
     setState(() {
       myCommodityPosts.insert(0, post);
     });
   }
-  
+
   String _formatNumber(num number) {
     if (number == 0) return "0";
     String s = number.toString();
-    return s.replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
+    return s.replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]}.',
+    );
   }
 
   Future<void> _markAsSold(CommodityPost post) async {
@@ -168,15 +165,20 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text("Tandai Laku?"),
-        content: Text("Iklan \"${post.commodity}\" akan dipindahkan ke riwayat."),
+        content: Text(
+          "Iklan \"${post.commodity}\" akan dipindahkan ke riwayat.",
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Batal")),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Batal"),
+          ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
               _showDealPriceDialog(post);
-            }, 
-            child: const Text("Ya, Sudah Laku")
+            },
+            child: const Text("Ya, Sudah Laku"),
           ),
         ],
       ),
@@ -201,53 +203,64 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
               decoration: const InputDecoration(
                 prefixText: "Rp ",
                 border: OutlineInputBorder(),
-                hintText: "Contoh: 34000"
+                hintText: "Contoh: 34000",
               ),
-            )
+            ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("Batal")
+            child: const Text("Batal"),
           ),
           ElevatedButton(
             onPressed: () async {
               if (dealPriceController.text.isNotEmpty) {
                 Navigator.pop(ctx);
-                
+
                 // Show loading
                 showDialog(
                   context: context,
                   barrierDismissible: false,
-                  builder: (ctx) => const Center(child: CircularProgressIndicator()),
+                  builder: (ctx) =>
+                      const Center(child: CircularProgressIndicator()),
                 );
-                
-                final soldPrice = double.tryParse(dealPriceController.text.replaceAll('.', '')) ?? 0;
+
+                final soldPrice =
+                    double.tryParse(
+                      dealPriceController.text.replaceAll('.', ''),
+                    ) ??
+                    0;
                 final result = await _listingService.markAsSold(
                   listingId: post.id,
                   soldPrice: soldPrice,
                 );
-                
+
                 if (mounted) Navigator.pop(context); // Close loading
-                
+
                 if (result['success']) {
                   await _loadMyListings(); // Reload data
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Selamat! Iklan ditandai laku."))
+                      const SnackBar(
+                        content: Text("Selamat! Iklan ditandai laku."),
+                      ),
                     );
                   }
                 } else {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(result['message'] ?? 'Gagal menandai laku'))
+                      SnackBar(
+                        content: Text(
+                          result['message'] ?? 'Gagal menandai laku',
+                        ),
+                      ),
                     );
                   }
                 }
               }
-            }, 
-            child: const Text("Simpan")
+            },
+            child: const Text("Simpan"),
           ),
         ],
       ),
@@ -255,7 +268,9 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
   }
 
   Future<void> _updateOfferPrice(CommodityPost post) async {
-    final newPriceController = TextEditingController(text: post.price.toString());
+    final newPriceController = TextEditingController(
+      text: post.price.toString(),
+    );
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -272,11 +287,14 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                 prefixText: "Rp ",
                 border: OutlineInputBorder(),
               ),
-            )
+            ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Batal")),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Batal"),
+          ),
           ElevatedButton(
             onPressed: () {
               showDialog(
@@ -285,50 +303,62 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                   title: const Text("Konfirmasi"),
                   content: const Text("Simpan perubahan harga ini?"),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx2), child: const Text("Tidak")),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx2),
+                      child: const Text("Tidak"),
+                    ),
                     ElevatedButton(
                       onPressed: () async {
                         Navigator.pop(ctx2);
                         Navigator.pop(ctx);
-                        
+
                         // Show loading
                         showDialog(
                           context: context,
                           barrierDismissible: false,
-                          builder: (ctx) => const Center(child: CircularProgressIndicator()),
+                          builder: (ctx) =>
+                              const Center(child: CircularProgressIndicator()),
                         );
-                        
-                        final newPrice = double.tryParse(newPriceController.text) ?? post.price;
+
+                        final newPrice =
+                            double.tryParse(newPriceController.text) ??
+                            post.price;
                         final result = await _listingService.updateListing(
                           listingId: post.id,
                           price: newPrice,
                         );
-                        
+
                         if (mounted) Navigator.pop(context); // Close loading
-                        
+
                         if (result['success']) {
                           await _loadMyListings(); // Reload data
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Harga berhasil diperbarui!"))
+                              const SnackBar(
+                                content: Text("Harga berhasil diperbarui!"),
+                              ),
                             );
                           }
                         } else {
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(result['message'] ?? 'Gagal update harga'))
+                              SnackBar(
+                                content: Text(
+                                  result['message'] ?? 'Gagal update harga',
+                                ),
+                              ),
                             );
                           }
                         }
                       },
                       child: const Text("Ya, Simpan"),
-                    )
+                    ),
                   ],
                 ),
               );
             },
-            child: const Text("Perbarui")
-          )
+            child: const Text("Perbarui"),
+          ),
         ],
       ),
     );
@@ -338,7 +368,7 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
     final areaController = TextEditingController(text: post.area);
     final locController = TextEditingController(text: post.location);
     final contactController = TextEditingController(text: post.contactInfo);
-    
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -347,64 +377,82 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text("Harga tidak dapat diubah di sini.", style: TextStyle(color: Colors.grey, fontSize: 12)),
+              const Text(
+                "Harga tidak dapat diubah di sini.",
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+              ),
               const SizedBox(height: 16),
               TextField(
                 controller: locController,
-                decoration: const InputDecoration(labelText: "Lokasi", prefixIcon: Icon(Icons.pin_drop)),
+                decoration: const InputDecoration(
+                  labelText: "Lokasi",
+                  prefixIcon: Icon(Icons.pin_drop),
+                ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: areaController,
-                decoration: const InputDecoration(labelText: "Luas Lahan", prefixIcon: Icon(Icons.square_foot)),
+                decoration: const InputDecoration(
+                  labelText: "Luas Lahan",
+                  prefixIcon: Icon(Icons.square_foot),
+                ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: contactController,
-                decoration: const InputDecoration(labelText: "Kontak", prefixIcon: Icon(Icons.phone)),
+                decoration: const InputDecoration(
+                  labelText: "Kontak",
+                  prefixIcon: Icon(Icons.phone),
+                ),
               ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Batal")),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Batal"),
+          ),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              
+
               // Show loading
               showDialog(
                 context: context,
                 barrierDismissible: false,
-                builder: (ctx) => const Center(child: CircularProgressIndicator()),
+                builder: (ctx) =>
+                    const Center(child: CircularProgressIndicator()),
               );
-              
+
               final result = await _listingService.updateListing(
                 listingId: post.id,
                 location: locController.text,
                 area: areaController.text,
                 contactNumber: contactController.text,
               );
-              
+
               if (mounted) Navigator.pop(context); // Close loading
-              
+
               if (result['success']) {
                 await _loadMyListings(); // Reload data
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Info Iklan diperbarui."))
+                    const SnackBar(content: Text("Info Iklan diperbarui.")),
                   );
                 }
               } else {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(result['message'] ?? 'Gagal update'))
+                    SnackBar(
+                      content: Text(result['message'] ?? 'Gagal update'),
+                    ),
                   );
                 }
               }
             },
-            child: const Text("Simpan Perubahan")
-          )
+            child: const Text("Simpan Perubahan"),
+          ),
         ],
       ),
     );
@@ -429,8 +477,16 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                   width: double.infinity,
                   decoration: const BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
-                    boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))],
+                    borderRadius: BorderRadius.vertical(
+                      bottom: Radius.circular(30),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 10,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Padding(
                     padding: const EdgeInsets.only(top: 10, bottom: 25),
@@ -440,38 +496,70 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                           "Manajemen Listing",
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 22, 
-                            fontWeight: FontWeight.bold, 
-                            color: Color(0xFF1B5E20)
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1B5E20),
                           ),
                         ),
                         const SizedBox(height: 16),
-                        
+
                         Container(
-                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.green)),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.green),
+                          ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               InkWell(
-                                onTap: () => setState(() => _showHistory = false),
+                                onTap: () =>
+                                    setState(() => _showHistory = false),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: !_showHistory ? Colors.green : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(20)
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
                                   ),
-                                  child: Text("Aktif", style: TextStyle(color: !_showHistory ? Colors.white : Colors.green, fontWeight: FontWeight.bold)),
+                                  decoration: BoxDecoration(
+                                    color: !_showHistory
+                                        ? Colors.green
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    "Aktif",
+                                    style: TextStyle(
+                                      color: !_showHistory
+                                          ? Colors.white
+                                          : Colors.green,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ),
                               ),
                               InkWell(
-                                onTap: () => setState(() => _showHistory = true),
+                                onTap: () =>
+                                    setState(() => _showHistory = true),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: _showHistory ? Colors.green : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(20)
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
                                   ),
-                                  child: Text("Riwayat", style: TextStyle(color: _showHistory ? Colors.white : Colors.green, fontWeight: FontWeight.bold)),
+                                  decoration: BoxDecoration(
+                                    color: _showHistory
+                                        ? Colors.green
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    "Riwayat",
+                                    style: TextStyle(
+                                      color: _showHistory
+                                          ? Colors.white
+                                          : Colors.green,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],
@@ -481,7 +569,7 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 20),
 
                 if (_isLoading)
@@ -496,9 +584,18 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey.shade400),
+                          Icon(
+                            Icons.inventory_2_outlined,
+                            size: 64,
+                            color: Colors.grey.shade400,
+                          ),
                           const SizedBox(height: 16),
-                          Text(_showHistory ? "Belum ada riwayat penjualan." : 'Belum ada iklan aktif.', style: const TextStyle(color: Colors.grey)),
+                          Text(
+                            _showHistory
+                                ? "Belum ada riwayat penjualan."
+                                : 'Belum ada iklan aktif.',
+                            style: const TextStyle(color: Colors.grey),
+                          ),
                         ],
                       ),
                     ),
@@ -511,8 +608,9 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                     itemCount: displayPosts.length,
                     itemBuilder: (context, index) {
                       final post = displayPosts[index];
-                      final imageUrl = (post.images != null && post.images!.isNotEmpty) 
-                          ? post.images!.first 
+                      final imageUrl =
+                          (post.images != null && post.images!.isNotEmpty)
+                          ? post.images!.first
                           : "https://via.placeholder.com/150";
                       return Stack(
                         children: [
@@ -523,7 +621,7 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.20), 
+                                  color: Colors.black.withOpacity(0.20),
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
                                   spreadRadius: 0,
@@ -532,7 +630,7 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                                   color: Colors.black.withOpacity(0.12),
                                   blurRadius: 15,
                                   offset: const Offset(0, 8),
-                                  spreadRadius: 2, 
+                                  spreadRadius: 2,
                                 ),
                               ],
                             ),
@@ -542,124 +640,248 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                               clipBehavior: Clip.antiAlias,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20),
-                                side: BorderSide(color: Colors.grey.shade300, width: 2.0),
+                                side: BorderSide(
+                                  color: Colors.grey.shade300,
+                                  width: 2.0,
+                                ),
                               ),
                               child: Column(
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+                                    padding: const EdgeInsets.fromLTRB(
+                                      16,
+                                      12,
+                                      12,
+                                      12,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: post.type == "Borong" ? Colors.green.shade50 : Colors.orange.shade50,
-                                      borderRadius: const BorderRadius.vertical(top: Radius.circular(19)),
-                                      border: Border(bottom: BorderSide(color: post.type == "Borong" ? Colors.green.withOpacity(0.2) : Colors.orange.withOpacity(0.2)))
+                                      color: post.type == "Borong"
+                                          ? Colors.green.shade50
+                                          : Colors.orange.shade50,
+                                      borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(19),
+                                      ),
+                                      border: Border(
+                                        bottom: BorderSide(
+                                          color: post.type == "Borong"
+                                              ? Colors.green.withOpacity(0.2)
+                                              : Colors.orange.withOpacity(0.2),
+                                        ),
+                                      ),
                                     ),
                                     child: Row(
                                       children: [
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                          decoration: BoxDecoration(
-                                            color: post.type == "Borong" ? const Color(0xFF1B5E20) : Colors.deepOrange,
-                                            borderRadius: BorderRadius.circular(8),
-                                            boxShadow: [BoxShadow(color: (post.type == "Borong" ? Colors.green : Colors.orange).withOpacity(0.3), blurRadius: 6, offset: const Offset(0, 3))]
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 6,
                                           ),
-                                          child: Text(post.type.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                                          decoration: BoxDecoration(
+                                            color: post.type == "Borong"
+                                                ? const Color(0xFF1B5E20)
+                                                : Colors.deepOrange,
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color:
+                                                    (post.type == "Borong"
+                                                            ? Colors.green
+                                                            : Colors.orange)
+                                                        .withOpacity(0.3),
+                                                blurRadius: 6,
+                                                offset: const Offset(0, 3),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Text(
+                                            post.type.toUpperCase(),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
                                         ),
                                         const Spacer(),
-                                        
+
                                         if (_showHistory)
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                            decoration: BoxDecoration(color: Colors.grey.shade700, borderRadius: BorderRadius.circular(8)),
-                                            child: const Text("TERJUAL", style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 5,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade700,
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: const Text(
+                                              "TERJUAL",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
                                           )
-                                        else 
+                                        else
                                           Row(
                                             children: [
                                               if (post.type == "Borong") ...[
                                                 InkWell(
-                                                  onTap: () => _updateOfferPrice(post),
+                                                  onTap: () =>
+                                                      _updateOfferPrice(post),
                                                   child: Container(
-                                                    width: 36, height: 36,
+                                                    width: 36,
+                                                    height: 36,
                                                     decoration: BoxDecoration(
                                                       color: Colors.white,
-                                                      borderRadius: BorderRadius.circular(10),
-                                                      boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))]
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            10,
+                                                          ),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color: Colors.green
+                                                              .withOpacity(0.2),
+                                                          blurRadius: 4,
+                                                          offset: const Offset(
+                                                            0,
+                                                            2,
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ),
-                                                    child: const Icon(Icons.price_check, size: 18, color: Colors.green),
+                                                    child: const Icon(
+                                                      Icons.price_check,
+                                                      size: 18,
+                                                      color: Colors.green,
+                                                    ),
                                                   ),
                                                 ),
                                                 const SizedBox(width: 8),
                                               ],
-                                              
+
                                               InkWell(
                                                 onTap: () => _editListing(post),
                                                 child: Container(
-                                                  width: 36, height: 36,
+                                                  width: 36,
+                                                  height: 36,
                                                   decoration: BoxDecoration(
                                                     color: Colors.white,
-                                                    borderRadius: BorderRadius.circular(10),
-                                                    boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))]
-                                                  ),
-                                                  child: const Icon(Icons.edit, size: 18, color: Colors.blue),
-                                                ),
-                                              ),
-                                            ],
-                                          )
-                                      ],
-                                    ),
-                                  ),
-                                  
-                                  Padding(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Container(
-                                          width: 90, 
-                                          height: 90,
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey.shade100,
-                                            borderRadius: BorderRadius.circular(16),
-                                            border: Border.all(color: Colors.grey.shade200, width: 1),
-                                          ),
-                                          child: ClipRRect(  // ✅ Gunakan ClipRRect + Image.network
-                                            borderRadius: BorderRadius.circular(16),
-                                            child: Image.network(
-                                              imageUrl,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (context, error, stackTrace) {
-                                                print("❌ Error loading image: $imageUrl");
-                                                print("Error detail: $error");
-                                                return Container(
-                                                  color: Colors.grey.shade300,
-                                                  child: Column(
-                                                    mainAxisAlignment: MainAxisAlignment.center,
-                                                    children: [
-                                                      Icon(
-                                                        Icons.broken_image_outlined, 
-                                                        size: 32, 
-                                                        color: Colors.grey.shade600
-                                                      ),
-                                                      const SizedBox(height: 4),
-                                                      Text(
-                                                        "No Image", 
-                                                        style: TextStyle(
-                                                          fontSize: 9, 
-                                                          color: Colors.grey.shade600
-                                                        )
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          10,
+                                                        ),
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                        color: Colors.blue
+                                                            .withOpacity(0.2),
+                                                        blurRadius: 4,
+                                                        offset: const Offset(
+                                                          0,
+                                                          2,
+                                                        ),
                                                       ),
                                                     ],
                                                   ),
-                                                );
-                                              },
+                                                  child: const Icon(
+                                                    Icons.edit,
+                                                    size: 18,
+                                                    color: Colors.blue,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          width: 90,
+                                          height: 90,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey.shade100,
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.grey.shade200,
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: ClipRRect(
+                                            // ✅ Gunakan ClipRRect + Image.network
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
+                                            child: Image.network(
+                                              imageUrl,
+                                              fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                    print(
+                                                      "❌ Error loading image: $imageUrl",
+                                                    );
+                                                    print(
+                                                      "Error detail: $error",
+                                                    );
+                                                    return Container(
+                                                      color:
+                                                          Colors.grey.shade300,
+                                                      child: Column(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        children: [
+                                                          Icon(
+                                                            Icons
+                                                                .broken_image_outlined,
+                                                            size: 32,
+                                                            color: Colors
+                                                                .grey
+                                                                .shade600,
+                                                          ),
+                                                          const SizedBox(
+                                                            height: 4,
+                                                          ),
+                                                          Text(
+                                                            "No Image",
+                                                            style: TextStyle(
+                                                              fontSize: 9,
+                                                              color: Colors
+                                                                  .grey
+                                                                  .shade600,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    );
+                                                  },
                                               loadingBuilder: (context, child, loadingProgress) {
-                                                if (loadingProgress == null) return child;
+                                                if (loadingProgress == null)
+                                                  return child;
                                                 return Center(
                                                   child: CircularProgressIndicator(
                                                     strokeWidth: 2,
-                                                    value: loadingProgress.expectedTotalBytes != null
-                                                        ? loadingProgress.cumulativeBytesLoaded / 
-                                                          loadingProgress.expectedTotalBytes!
+                                                    value:
+                                                        loadingProgress
+                                                                .expectedTotalBytes !=
+                                                            null
+                                                        ? loadingProgress
+                                                                  .cumulativeBytesLoaded /
+                                                              loadingProgress
+                                                                  .expectedTotalBytes!
                                                         : null,
                                                   ),
                                                 );
@@ -668,40 +890,81 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                                           ),
                                         ),
                                         const SizedBox(width: 16),
-                                          Expanded(
+                                        Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              Text(post.commodity, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color(0xFF212121))),
+                                              Text(
+                                                post.commodity,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w800,
+                                                  fontSize: 18,
+                                                  color: Color(0xFF212121),
+                                                ),
+                                              ),
                                               const SizedBox(height: 6),
-                                              
+
                                               Row(
                                                 children: [
-                                                  Icon(Icons.scale, size: 14, color: Colors.grey.shade600),
+                                                  Icon(
+                                                    Icons.scale,
+                                                    size: 14,
+                                                    color: Colors.grey.shade600,
+                                                  ),
                                                   const SizedBox(width: 4),
-                                                  Text("${post.quantityTons} Ton", style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
+                                                  Text(
+                                                    "${post.quantityTons} Ton",
+                                                    style: TextStyle(
+                                                      color:
+                                                          Colors.grey.shade700,
+                                                      fontSize: 13,
+                                                    ),
+                                                  ),
                                                   const SizedBox(width: 12),
-                                                  Icon(Icons.aspect_ratio, size: 14, color: Colors.grey.shade600),
+                                                  Icon(
+                                                    Icons.aspect_ratio,
+                                                    size: 14,
+                                                    color: Colors.grey.shade600,
+                                                  ),
                                                   const SizedBox(width: 4),
-                                                  Text(post.area, style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
+                                                  Text(
+                                                    post.area,
+                                                    style: TextStyle(
+                                                      color:
+                                                          Colors.grey.shade700,
+                                                      fontSize: 13,
+                                                    ),
+                                                  ),
                                                 ],
                                               ),
-                                              
+
                                               const SizedBox(height: 12),
                                               Container(
-                                                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 4,
+                                                      horizontal: 8,
+                                                    ),
                                                 decoration: BoxDecoration(
-                                                  color: const Color(0xFFF1F8E9),
-                                                  borderRadius: BorderRadius.circular(6)
+                                                  color: const Color(
+                                                    0xFFF1F8E9,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
                                                 ),
                                                 child: Text(
-                                                  _showHistory 
-                                                    ? "Deal: Rp ${_formatNumber(post.soldPrice ?? 0)}" 
-                                                    : "Rp ${_formatNumber(post.price)} ${post.type == 'Borong' ? '(Total)' : '/ Kg'}", 
+                                                  _showHistory
+                                                      ? "Deal: Rp ${_formatNumber(post.soldPrice ?? 0)}"
+                                                      : "Rp ${_formatNumber(post.price)} ${post.type == 'Borong' ? '(Total)' : '/ Kg'}",
                                                   style: TextStyle(
-                                                    color: _showHistory ? Colors.grey.shade700 : const Color(0xFF1B5E20), 
-                                                    fontWeight: FontWeight.w800, 
-                                                    fontSize: 15
+                                                    color: _showHistory
+                                                        ? Colors.grey.shade700
+                                                        : const Color(
+                                                            0xFF1B5E20,
+                                                          ),
+                                                    fontWeight: FontWeight.w800,
+                                                    fontSize: 15,
                                                   ),
                                                 ),
                                               ),
@@ -711,31 +974,54 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                                       ],
                                     ),
                                   ),
-                                  
+
                                   if (!_showHistory)
                                     Padding(
-                                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                      padding: const EdgeInsets.fromLTRB(
+                                        16,
+                                        0,
+                                        16,
+                                        16,
+                                      ),
                                       child: InkWell(
                                         onTap: () => _markAsSold(post),
                                         child: Container(
                                           alignment: Alignment.center,
-                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 12,
+                                          ),
                                           decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(12),
-                                            border: Border.all(color: Colors.red.shade100, width: 1.5),
-                                            color: Colors.red.shade50
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.red.shade100,
+                                              width: 1.5,
+                                            ),
+                                            color: Colors.red.shade50,
                                           ),
                                           child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
                                             children: [
-                                              Icon(Icons.check_circle_outline, size: 20, color: Colors.red.shade700),
+                                              Icon(
+                                                Icons.check_circle_outline,
+                                                size: 20,
+                                                color: Colors.red.shade700,
+                                              ),
                                               const SizedBox(width: 8),
-                                              Text("Tandai Laku / Terjual", style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold)),
+                                              Text(
+                                                "Tandai Laku / Terjual",
+                                                style: TextStyle(
+                                                  color: Colors.red.shade700,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
                                             ],
                                           ),
                                         ),
                                       ),
-                                    )
+                                    ),
                                 ],
                               ),
                             ),
@@ -743,24 +1029,44 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
 
                           if (_showHistory && post.rating != null)
                             Positioned(
-                              top: 10, right: 10,
+                              top: 10,
+                              right: 10,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.amber,
                                   borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)]
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black26,
+                                      blurRadius: 4,
+                                    ),
+                                  ],
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.star, size: 14, color: Colors.white),
+                                    const Icon(
+                                      Icons.star,
+                                      size: 14,
+                                      color: Colors.white,
+                                    ),
                                     const SizedBox(width: 4),
-                                    Text("${post.rating}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)),
+                                    Text(
+                                      "${post.rating}",
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
-                            )
+                            ),
                         ],
                       );
                     },
@@ -777,10 +1083,7 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text(
           "Buat Listing",
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,

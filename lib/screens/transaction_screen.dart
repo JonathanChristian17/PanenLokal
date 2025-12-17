@@ -1,43 +1,94 @@
 import 'package:flutter/material.dart';
 import 'package:panen_lokal/models/transaction_model.dart';
-import 'package:panen_lokal/models/transaction_status.dart'; // ✅ Import status juga
+import 'package:panen_lokal/models/transaction_status.dart'; 
+import 'package:panen_lokal/services/transaction_service.dart';
 
-class TransactionScreen extends StatelessWidget {
+class TransactionScreen extends StatefulWidget {
   const TransactionScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final transactions = _dummyTransactions();
+  State<TransactionScreen> createState() => _TransactionScreenState();
+}
 
+class _TransactionScreenState extends State<TransactionScreen> {
+  late Future<List<TransactionModel>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _reload();
+  }
+
+  void _reload() {
+    setState(() {
+      _future = TransactionService().getMyTransactions();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FBE7),
       appBar: AppBar(
         title: const Text('Transaksi'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
-        elevation: 1,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _reload,
+          ),
+        ],
       ),
-      body: transactions.isEmpty
-          ? const Center(
-              child: Text(
-                'Belum ada transaksi',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-            )
-          : ListView.builder(
+      body: RefreshIndicator(
+        onRefresh: () async {
+          _reload();
+        },
+        child: FutureBuilder<List<TransactionModel>>(
+          future: _future,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return ListView(
+                children: const [
+                  SizedBox(height: 200),
+                  Center(
+                    child: Text('Belum ada transaksi'),
+                  ),
+                ],
+              );
+            }
+
+            final transactions = snapshot.data!;
+
+            return ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: transactions.length,
               itemBuilder: (context, index) {
-                return _TransactionCard(item: transactions[index]);
+                return _TransactionCard(
+                  item: transactions[index],
+                  onUpdate: _reload,
+                );
               },
-            ),
+            );
+          },
+        ),
+      ),
     );
   }
 }
 
 class _TransactionCard extends StatelessWidget {
   final TransactionModel item;
-  const _TransactionCard({required this.item});
+  final VoidCallback onUpdate;
+  
+  const _TransactionCard({
+    required this.item,
+    required this.onUpdate,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +96,6 @@ class _TransactionCard extends StatelessWidget {
     String statusText;
     IconData statusIcon;
 
-    // ✅ LENGKAPI semua case enum
     switch (item.status) {
       case TransactionStatus.success:
         statusColor = Colors.green;
@@ -82,7 +132,6 @@ class _TransactionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// HEADER
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -130,10 +179,8 @@ class _TransactionCard extends StatelessWidget {
           const Divider(),
           const SizedBox(height: 8),
 
-          /// PRODUK INFO
           Row(
             children: [
-              // ✅ Tampilkan gambar produk jika ada
               if (item.productImage != null)
                 Container(
                   width: 60,
@@ -191,45 +238,24 @@ class _TransactionCard extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          /// TOMBOL AKSI
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              // Tombol Detail
               OutlinedButton.icon(
                 onPressed: () {
                   _showTransactionDetail(context, item);
                 },
                 icon: const Icon(Icons.info_outline, size: 16),
                 label: const Text("Detail"),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.grey.shade700,
-                  side: BorderSide(color: Colors.grey.shade300),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                ),
               ),
-              
               const SizedBox(width: 8),
-              
-              // Tombol Ulas (hanya jika success)
               if (item.status == TransactionStatus.success)
                 ElevatedButton.icon(
                   onPressed: () {
-                    _showReviewDialog(context, item);
+                    _showReviewDialog(context, item, onUpdate);
                   },
                   icon: const Icon(Icons.rate_review, size: 16),
                   label: const Text("Ulas"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  ),
                 ),
             ],
           )
@@ -238,7 +264,6 @@ class _TransactionCard extends StatelessWidget {
     );
   }
 
-  // ✅ Helper untuk format currency
   String _formatCurrency(double value) {
     return value.toStringAsFixed(0).replaceAllMapped(
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
@@ -246,7 +271,6 @@ class _TransactionCard extends StatelessWidget {
     );
   }
 
-  // ✅ Helper untuk format date
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
@@ -266,7 +290,6 @@ class _TransactionCard extends StatelessWidget {
   }
 }
 
-// ✅ Dialog Detail Transaksi
 void _showTransactionDetail(BuildContext context, TransactionModel item) {
   showDialog(
     context: context,
@@ -330,15 +353,18 @@ Widget _buildDetailRow(String label, String value) {
   );
 }
 
-// ✅ Dialog Review
-void _showReviewDialog(BuildContext context, TransactionModel item) {
+void _showReviewDialog(
+  BuildContext context,
+  TransactionModel item,
+  VoidCallback onUpdate,
+) {
   double rating = 5.0;
   final reviewController = TextEditingController();
 
   showDialog(
     context: context,
     builder: (_) => StatefulBuilder(
-      builder: (context, setState) => AlertDialog(
+      builder: (context, setDialogState) => AlertDialog(
         title: const Text("Beri Ulasan"),
         content: SingleChildScrollView(
           child: Column(
@@ -346,10 +372,16 @@ void _showReviewDialog(BuildContext context, TransactionModel item) {
             children: [
               Text(
                 item.productName ?? 'Produk',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
               const SizedBox(height: 16),
-              const Text("Rating:", style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                "Rating:",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -361,7 +393,7 @@ void _showReviewDialog(BuildContext context, TransactionModel item) {
                       size: 32,
                     ),
                     onPressed: () {
-                      setState(() => rating = index + 1.0);
+                      setDialogState(() => rating = index + 1.0);
                     },
                   );
                 }),
@@ -388,67 +420,51 @@ void _showReviewDialog(BuildContext context, TransactionModel item) {
             child: const Text("Batal"),
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Ulasan terkirim! Terima kasih 🎉"),
-                  backgroundColor: Colors.green,
+            onPressed: () async {
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (ctx) => const Center(
+                  child: CircularProgressIndicator(),
                 ),
               );
+
+              try {
+                await TransactionService().submitReview(
+                  transactionId: item.id,
+                  rating: rating.toInt(),
+                  comment: reviewController.text,
+                );
+
+                if (context.mounted) {
+                  Navigator.pop(context); // Close loading
+                  Navigator.pop(context); // Close dialog
+
+                  onUpdate(); // Reload
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Ulasan berhasil dikirim 🎉"),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Error: $e"),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-            ),
             child: const Text("Kirim"),
           ),
         ],
       ),
     ),
   );
-}
-
-// ✅ DUMMY DATA (sesuai dengan TransactionModel yang benar)
-List<TransactionModel> _dummyTransactions() {
-  return [
-    TransactionModel(
-      id: '1',
-      buyerId: '10',
-      farmerId: '5',
-      listingId: '101',
-      status: TransactionStatus.success,
-      contactedAt: DateTime.now().subtract(const Duration(days: 2)),
-      completedAt: DateTime.now().subtract(const Duration(days: 1)),
-      createdAt: DateTime.now().subtract(const Duration(days: 2)),
-      updatedAt: DateTime.now().subtract(const Duration(days: 1)),
-      productName: 'Brokoli Segar',
-      productImage: 'https://example.com/brokoli.jpg',
-      price: 197100,
-    ),
-    TransactionModel(
-      id: '2',
-      buyerId: '10',
-      farmerId: '6',
-      listingId: '102',
-      status: TransactionStatus.negotiating,
-      contactedAt: DateTime.now().subtract(const Duration(hours: 3)),
-      createdAt: DateTime.now().subtract(const Duration(hours: 3)),
-      updatedAt: DateTime.now().subtract(const Duration(hours: 3)),
-      productName: 'Tomat Merah 5 Kg',
-      productImage: 'https://example.com/tomat.jpg',
-      price: 193100,
-    ),
-    TransactionModel(
-      id: '3',
-      buyerId: '10',
-      farmerId: '7',
-      listingId: '103',
-      status: TransactionStatus.failed,
-      contactedAt: DateTime.now().subtract(const Duration(days: 5)),
-      createdAt: DateTime.now().subtract(const Duration(days: 5)),
-      updatedAt: DateTime.now().subtract(const Duration(days: 4)),
-      productName: 'Cabai Merah Keriting',
-      price: 193100,
-    ),
-  ];
 }

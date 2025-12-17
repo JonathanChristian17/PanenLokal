@@ -37,7 +37,9 @@ class VerificationSubmission {
       status: json['status'] as String,
       submittedAt: DateTime.parse(json['submitted_at']),
       note: json['note'],
-      user: json['user'] != null ? UserModel.fromJson({'user': json['user']}) : null,
+      user: json['user'] != null
+          ? UserModel.fromJson({'user': json['user']})
+          : null,
     );
   }
 }

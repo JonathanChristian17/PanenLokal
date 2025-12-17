@@ -8,8 +8,9 @@ class LocalNotificationService {
     const AndroidInitializationSettings androidInit =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    const InitializationSettings initSettings =
-        InitializationSettings(android: androidInit);
+    const InitializationSettings initSettings = InitializationSettings(
+      android: androidInit,
+    );
 
     await _notificationsPlugin.initialize(initSettings);
   }
@@ -20,15 +21,16 @@ class LocalNotificationService {
   }) async {
     const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
-      'welcome_channel',
-      'Welcome Notifications',
-      channelDescription: 'Notifikasi pendaftaran',
-      importance: Importance.max,
-      priority: Priority.high,
-    );
+          'welcome_channel',
+          'Welcome Notifications',
+          channelDescription: 'Notifikasi pendaftaran',
+          importance: Importance.max,
+          priority: Priority.high,
+        );
 
-    const NotificationDetails notificationDetails =
-        NotificationDetails(android: androidDetails);
+    const NotificationDetails notificationDetails = NotificationDetails(
+      android: androidDetails,
+    );
 
     await _notificationsPlugin.show(
       DateTime.now().millisecondsSinceEpoch ~/ 1000,

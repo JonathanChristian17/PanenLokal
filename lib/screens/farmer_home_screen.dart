@@ -6,6 +6,12 @@ import 'listing_form_screen.dart';
 import 'listing_detail_screen.dart';
 import 'package:panen_lokal/services/listing_service.dart';
 import '../widgets/notification_button.dart';
+import 'package:panen_lokal/services/transaction_service.dart';
+import 'package:panen_lokal/models/transaction_model.dart';
+
+
+
+
 
 class CommodityPost {
   final String id;
@@ -23,6 +29,7 @@ class CommodityPost {
   final double? rating;
   final String? reviewText;
   final List<String>? images;
+  final String? transactionId; // ✅ TAMBAHKAN INI
 
   CommodityPost({
     required this.id,
@@ -40,7 +47,9 @@ class CommodityPost {
     this.rating,
     this.reviewText,
     this.images,
+    this.transactionId, // ✅ TAMBAHKAN INI
   });
+
 
   factory CommodityPost.fromJson(Map<String, dynamic> json) {
     return CommodityPost(
@@ -54,14 +63,10 @@ class CommodityPost {
       contactInfo: json['contact_number'] ?? '',
       category: json['category'] ?? '',
       type: json['type'] ?? 'Timbang',
-      isSold:
-          json['is_sold'] == true ||
-          json['is_sold'] == 1 ||
-          json['is_sold'] == '1',
-      soldPrice: json['sold_price'] != null
-          ? double.tryParse(json['sold_price'].toString())
-          : null,
+      isSold: json['is_sold'] == true || json['is_sold'] == 1 || json['is_sold'] == '1',
+      soldPrice: json['sold_price'] != null ? double.tryParse(json['sold_price'].toString()) : null,
       images: json['images'] != null ? List<String>.from(json['images']) : null,
+      transactionId: json['transaction_id']?.toString(), // ✅ TAMBAHKAN INI
     );
   }
 }
@@ -79,55 +84,71 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
   bool _isLoading = true;
   List<CommodityPost> myCommodityPosts = [];
   final ListingService _listingService = ListingService();
+  List<TransactionModel> farmerTransactions = [];
 
   @override
   void initState() {
     super.initState();
     _loadMyListings();
   }
+Future<void> _loadFarmerTransactions() async {
+  try {
+    final data = await TransactionService().getFarmerTransactions();
+    setState(() {
+      farmerTransactions = data;
+      _isLoading = false;
+    });
+  } catch (e) {
+    _isLoading = false;
+    debugPrint("Error: $e");
+  }
+}
+
+
 
   // Load data dari database
-  Future<void> _loadMyListings() async {
-    setState(() => _isLoading = true);
+Future<void> _loadMyListings() async {
+  setState(() => _isLoading = true);
 
-    try {
-      final result = await _listingService.getMyListings();
+  try {
+    // ✅ Load data listings dari database
+    final result = await _listingService.getMyListings();
 
-      if (result['success']) {
-        final dynamic responseData = result['data'];
-        final List<dynamic> data =
-            responseData is Map && responseData.containsKey('data')
-            ? responseData['data']
-            : responseData;
+    if (result['success']) {
+      final dynamic responseData = result['data'];
+      final List<dynamic> data =
+          responseData is Map && responseData.containsKey('data')
+          ? responseData['data']
+          : responseData;
 
-        setState(() {
-          myCommodityPosts = data
-              .map((item) => CommodityPost.fromJson(item))
-              .toList();
-          _isLoading = false;
-        });
+      setState(() {
+        myCommodityPosts = data
+            .map((item) => CommodityPost.fromJson(item))
+            .toList();
+        _isLoading = false;
+      });
 
-        print("Loaded ${myCommodityPosts.length} listings");
-        print("Active: ${myCommodityPosts.where((p) => !p.isSold).length}");
-        print("Sold: ${myCommodityPosts.where((p) => p.isSold).length}");
-      } else {
-        setState(() => _isLoading = false);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result['message'] ?? 'Gagal memuat data')),
-          );
-        }
-      }
-    } catch (e) {
-      print("Error loading listings: $e");
+      print("Loaded ${myCommodityPosts.length} listings");
+      print("Active: ${myCommodityPosts.where((p) => !p.isSold).length}");
+      print("Sold: ${myCommodityPosts.where((p) => p.isSold).length}");
+    } else {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result['message'] ?? 'Gagal memuat data')),
+        );
       }
     }
+  } catch (e) {
+    print("Error loading listings: $e");
+    setState(() => _isLoading = false);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
   }
+}
 
   // ✅ Method untuk navigate ke form listing dengan handle result
   void _openListingForm() async {
@@ -185,87 +206,119 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
     );
   }
 
-  Future<void> _showDealPriceDialog(CommodityPost post) async {
-    final dealPriceController = TextEditingController();
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Feedback Harga Deal"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text("Berapa harga kesepakatan akhirnya?"),
-            const SizedBox(height: 12),
-            TextField(
-              controller: dealPriceController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                prefixText: "Rp ",
-                border: OutlineInputBorder(),
-                hintText: "Contoh: 34000",
-              ),
+Future<void> _showDealPriceDialog(CommodityPost post) async {
+  final dealPriceController = TextEditingController();
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => AlertDialog(
+      title: const Text("Feedback Harga Deal"),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text("Berapa harga kesepakatan akhirnya?"),
+          const SizedBox(height: 12),
+          TextField(
+            controller: dealPriceController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              prefixText: "Rp ",
+              border: OutlineInputBorder(),
+              hintText: "Contoh: 34000",
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Batal"),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (dealPriceController.text.isNotEmpty) {
-                Navigator.pop(ctx);
-
-                // Show loading
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (ctx) =>
-                      const Center(child: CircularProgressIndicator()),
-                );
-
-                final soldPrice =
-                    double.tryParse(
-                      dealPriceController.text.replaceAll('.', ''),
-                    ) ??
-                    0;
-                final result = await _listingService.markAsSold(
-                  listingId: post.id,
-                  soldPrice: soldPrice,
-                );
-
-                if (mounted) Navigator.pop(context); // Close loading
-
-                if (result['success']) {
-                  await _loadMyListings(); // Reload data
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Selamat! Iklan ditandai laku."),
-                      ),
-                    );
-                  }
-                } else {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          result['message'] ?? 'Gagal menandai laku',
-                        ),
-                      ),
-                    );
-                  }
-                }
-              }
-            },
-            child: const Text("Simpan"),
           ),
         ],
       ),
-    );
-  }
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text("Batal"),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            if (dealPriceController.text.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Harga tidak boleh kosong"),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              return;
+            }
+
+            Navigator.pop(ctx); // Close dialog
+
+            // Show loading
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (ctx) => const Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+
+            final soldPrice = double.tryParse(
+              dealPriceController.text.replaceAll('.', ''),
+            ) ?? 0;
+
+            try {
+              print("🔄 Marking listing ${post.id} as sold with price: $soldPrice");
+              
+              // ✅ 1. Update listing ke sold
+              final result = await _listingService.markAsSold(
+                listingId: post.id,
+                soldPrice: soldPrice,
+              );
+
+              print("✅ Result: ${result['success']}");
+
+              if (mounted) Navigator.pop(context); // Close loading
+
+              if (result['success']) {
+                print("✅ Listing marked as sold successfully");
+                
+                await _loadMyListings(); // Reload data
+                
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Selamat! Iklan ditandai laku & transaksi diselesaikan."),
+                      backgroundColor: Colors.green,
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+                }
+              } else {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        result['message'] ?? 'Gagal menandai laku',
+                      ),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            } catch (e) {
+              print("❌ Error: $e");
+              if (mounted) Navigator.pop(context); // Close loading
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("Error: $e"),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          },
+          child: const Text("Simpan"),
+        ),
+      ],
+    ),
+  );
+}
 
   Future<void> _updateOfferPrice(CommodityPost post) async {
     final newPriceController = TextEditingController(
@@ -977,52 +1030,104 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
 
                                   if (!_showHistory)
                                     Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                        16,
-                                        0,
-                                        16,
-                                        16,
-                                      ),
-                                      child: InkWell(
-                                        onTap: () => _markAsSold(post),
-                                        child: Container(
-                                          alignment: Alignment.center,
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 12,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                            border: Border.all(
-                                              color: Colors.red.shade100,
-                                              width: 1.5,
-                                            ),
-                                            color: Colors.red.shade50,
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.check_circle_outline,
-                                                size: 20,
-                                                color: Colors.red.shade700,
+                                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                      child: Row(
+                                        children: [
+                                          // ✅ TOMBOL "TIDAK JADI" - FIXED
+                                          Expanded(
+                                            child: OutlinedButton(
+                                              onPressed: () async {
+                                                // Konfirmasi dulu
+                                                final confirm = await showDialog<bool>(
+                                                  context: context,
+                                                  builder: (ctx) => AlertDialog(
+                                                    title: const Text("Konfirmasi"),
+                                                    content: const Text("Tandai semua transaksi listing ini gagal/tidak jadi?"),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () => Navigator.pop(ctx, false),
+                                                        child: const Text("Batal"),
+                                                      ),
+                                                      ElevatedButton(
+                                                        onPressed: () => Navigator.pop(ctx, true),
+                                                        style: ElevatedButton.styleFrom(
+                                                          backgroundColor: Colors.red,
+                                                        ),
+                                                        child: const Text("Ya, Tidak Jadi"),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+
+                                                if (confirm == true) {
+                                                  // Show loading
+                                                  showDialog(
+                                                    context: context,
+                                                    barrierDismissible: false,
+                                                    builder: (ctx) => const Center(
+                                                      child: CircularProgressIndicator(),
+                                                    ),
+                                                  );
+
+                                                  try {
+                                                    print("🔄 Updating transactions for listing ${post.id} to failed");
+                                                    
+                                                    // ✅ Update semua transaksi yang terkait dengan listing ini
+                                                    await TransactionService().updateTransactionsByListing(
+                                                      post.id,
+                                                      'failed',
+                                                    );
+
+                                                    if (mounted) Navigator.pop(context); // Close loading
+                                                    await _loadMyListings(); // Reload data
+
+                                                    if (mounted) {
+                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                        const SnackBar(
+                                                          content: Text("Semua transaksi ditandai gagal"),
+                                                          backgroundColor: Colors.orange,
+                                                        ),
+                                                      );
+                                                    }
+                                                  } catch (e) {
+                                                    print("❌ Error: $e");
+                                                    if (mounted) Navigator.pop(context); // Close loading
+                                                    if (mounted) {
+                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                        SnackBar(
+                                                          content: Text("Error: $e"),
+                                                          backgroundColor: Colors.red,
+                                                        ),
+                                                      );
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              style: OutlinedButton.styleFrom(
+                                                foregroundColor: Colors.red,
+                                                side: const BorderSide(color: Colors.red),
                                               ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                "Tandai Laku / Terjual",
-                                                style: TextStyle(
-                                                  color: Colors.red.shade700,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
+                                              child: const Text("Tidak Jadi"),
+                                            ),
                                           ),
-                                        ),
+
+                                          const SizedBox(width: 12),
+
+                                          // ✅ TOMBOL "TANDAI LAKU"
+                                          Expanded(
+                                            child: ElevatedButton(
+                                              onPressed: () => _markAsSold(post),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.green,
+                                                foregroundColor: Colors.white,
+                                              ),
+                                              child: const Text("Tandai Laku"),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                ],
+                                                                  ],
                               ),
                             ),
                           ),

@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ListingService {
   final Dio _dio = Dio();
-  static const String _baseUrl = "http://127.0.0.1:8000/api";
+  static const String _baseUrl = "http://10.0.2.2:8000/api";
   
     ListingService() {
     _dio.options.baseUrl = _baseUrl;

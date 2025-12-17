@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserManagementService {
-  final String _baseUrl = "http://127.0.0.1:8000/api";
+  final String _baseUrl = "http://10.0.2.2:8000/api";
 
   /// Get all users (Admin only)
   Future<Map<String, dynamic>> getAllUsers() async {

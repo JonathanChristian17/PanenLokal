@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:panen_lokal/models/verification_submission.dart';
 
 class AdminVerificationService {
-  final String _baseUrl = "http://127.0.0.1:8000/api";
+  final String _baseUrl = "http://10.0.2.2:8000/api";
 
   Future<List<VerificationSubmission>> fetchPendingSubmissions() async {
     final prefs = await SharedPreferences.getInstance();

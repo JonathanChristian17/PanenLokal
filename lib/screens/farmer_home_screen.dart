@@ -1074,8 +1074,8 @@ Future<void> _showDealPriceDialog(CommodityPost post) async {
                                                     
                                                     // ✅ Update semua transaksi yang terkait dengan listing ini
                                                     await TransactionService().updateTransactionsByListing(
-                                                      post.id,
-                                                      'failed',
+                                                      listingId: post.id,
+                                                      status: 'failed',
                                                     );
 
                                                     if (mounted) Navigator.pop(context); // Close loading

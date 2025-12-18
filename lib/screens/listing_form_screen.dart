@@ -259,7 +259,7 @@ void _finalizeSubmission() async {
             ],
           )).toList(),
         ),
-        if (_pickedImageItems.length < 5) ...[
+        if (_pickedImageItems.length < 1) ...[
           const SizedBox(height: 12),
           InkWell(
             onTap: _pickImage,
@@ -275,7 +275,7 @@ void _finalizeSubmission() async {
                       child: Icon(Icons.add_a_photo_rounded, size: 30, color: Colors.green.shade700),
                     ),
                     const SizedBox(height: 8),
-                    Text("Tap untuk Upload Foto (${_pickedImageItems.length}/5)", style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
+                    Text("Tap untuk Upload Foto (${_pickedImageItems.length}/1)", style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),

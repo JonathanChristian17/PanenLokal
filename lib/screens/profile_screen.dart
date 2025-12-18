@@ -25,6 +25,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool isLoading = true;
   String? errorMessage;
 
+bool get isBuyer => user?.role == "buyer";
+bool get isAdmin => user?.role == "admin";
+
+
   @override
   void initState() {
     super.initState();
@@ -174,8 +178,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
 
-    bool isBuyer = user!.role == "buyer";
-
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
       body: RefreshIndicator(
@@ -189,9 +191,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               _buildHeader(),
               const SizedBox(height: 20),
-              _buildVerificationBox(),
+              if (!isAdmin) _buildVerificationBox(),
               const SizedBox(height: 20),
-              if (isBuyer) _buildRoleSwitchCard(context, isBuyer),
+              if (isBuyer && !isAdmin) _buildRoleSwitchCard(context, isBuyer),
               const SizedBox(height: 20),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -476,9 +478,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
             icon: Icons.star_half_rounded,
             title: "Ulasan Pembeli",
             subtitle: "Lihat rating & komentar pelanggan",
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const FarmerReviewsScreen())),
+            onTap: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => FarmerReviewsScreen(
+        farmerId: user!.id.toString(),
+        farmerName: user!.fullName,
+      ),
+    ),
+  );
+},
+
           ),
+
+        if (!isAdmin)
         _buildMenuCard(
           icon: Icons.verified_outlined,
           title: "Ajukan Verifikasi",
@@ -496,12 +510,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             }
           },
         ),
-        _buildMenuCard(
-            icon: Icons.settings_outlined,
-            title: "Pengaturan Aplikasi",
-            onTap: () {}),
-        _buildMenuCard(
-            icon: Icons.help_outline, title: "Pusat Bantuan", onTap: () {}),
         _buildMenuCard(
             icon: Icons.logout,
             title: "Log Out",

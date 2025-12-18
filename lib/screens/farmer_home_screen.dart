@@ -9,10 +9,6 @@ import '../widgets/notification_button.dart';
 import 'package:panen_lokal/services/transaction_service.dart';
 import 'package:panen_lokal/models/transaction_model.dart';
 
-
-
-
-
 class CommodityPost {
   final String id;
   final String commodity;
@@ -29,7 +25,7 @@ class CommodityPost {
   final double? rating;
   final String? reviewText;
   final List<String>? images;
-  final String? transactionId; // ✅ TAMBAHKAN INI
+  final String? transactionId;
 
   CommodityPost({
     required this.id,
@@ -47,9 +43,8 @@ class CommodityPost {
     this.rating,
     this.reviewText,
     this.images,
-    this.transactionId, // ✅ TAMBAHKAN INI
+    this.transactionId,
   });
-
 
   factory CommodityPost.fromJson(Map<String, dynamic> json) {
     return CommodityPost(
@@ -66,7 +61,7 @@ class CommodityPost {
       isSold: json['is_sold'] == true || json['is_sold'] == 1 || json['is_sold'] == '1',
       soldPrice: json['sold_price'] != null ? double.tryParse(json['sold_price'].toString()) : null,
       images: json['images'] != null ? List<String>.from(json['images']) : null,
-      transactionId: json['transaction_id']?.toString(), // ✅ TAMBAHKAN INI
+      transactionId: json['transaction_id']?.toString(),
     );
   }
 }
@@ -91,76 +86,71 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
     super.initState();
     _loadMyListings();
   }
-Future<void> _loadFarmerTransactions() async {
-  try {
-    final data = await TransactionService().getFarmerTransactions();
-    setState(() {
-      farmerTransactions = data;
-      _isLoading = false;
-    });
-  } catch (e) {
-    _isLoading = false;
-    debugPrint("Error: $e");
-  }
-}
 
-
-
-  // Load data dari database
-Future<void> _loadMyListings() async {
-  setState(() => _isLoading = true);
-
-  try {
-    // ✅ Load data listings dari database
-    final result = await _listingService.getMyListings();
-
-    if (result['success']) {
-      final dynamic responseData = result['data'];
-      final List<dynamic> data =
-          responseData is Map && responseData.containsKey('data')
-          ? responseData['data']
-          : responseData;
-
+  Future<void> _loadFarmerTransactions() async {
+    try {
+      final data = await TransactionService().getFarmerTransactions();
       setState(() {
-        myCommodityPosts = data
-            .map((item) => CommodityPost.fromJson(item))
-            .toList();
+        farmerTransactions = data;
         _isLoading = false;
       });
+    } catch (e) {
+      _isLoading = false;
+      debugPrint("Error: $e");
+    }
+  }
 
-      print("Loaded ${myCommodityPosts.length} listings");
-      print("Active: ${myCommodityPosts.where((p) => !p.isSold).length}");
-      print("Sold: ${myCommodityPosts.where((p) => p.isSold).length}");
-    } else {
+  Future<void> _loadMyListings() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final result = await _listingService.getMyListings();
+
+      if (result['success']) {
+        final dynamic responseData = result['data'];
+        final List<dynamic> data =
+            responseData is Map && responseData.containsKey('data')
+            ? responseData['data']
+            : responseData;
+
+        setState(() {
+          myCommodityPosts = data
+              .map((item) => CommodityPost.fromJson(item))
+              .toList();
+          _isLoading = false;
+        });
+
+        print("Loaded ${myCommodityPosts.length} listings");
+        print("Active: ${myCommodityPosts.where((p) => !p.isSold).length}");
+        print("Sold: ${myCommodityPosts.where((p) => p.isSold).length}");
+      } else {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result['message'] ?? 'Gagal memuat data')),
+          );
+        }
+      }
+    } catch (e) {
+      print("Error loading listings: $e");
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? 'Gagal memuat data')),
+          SnackBar(content: Text('Error: $e')),
         );
       }
     }
-  } catch (e) {
-    print("Error loading listings: $e");
-    setState(() => _isLoading = false);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
-    }
   }
-}
 
-  // ✅ Method untuk navigate ke form listing dengan handle result
   void _openListingForm() async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const ListingFormScreen()),
     );
 
-    // Jika berhasil create listing, reload data
     if (result == true) {
       print("Listing created successfully, reloading data...");
-      _loadMyListings(); // Reload data dari database
+      _loadMyListings();
     }
   }
 
@@ -206,119 +196,117 @@ Future<void> _loadMyListings() async {
     );
   }
 
-Future<void> _showDealPriceDialog(CommodityPost post) async {
-  final dealPriceController = TextEditingController();
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (ctx) => AlertDialog(
-      title: const Text("Feedback Harga Deal"),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text("Berapa harga kesepakatan akhirnya?"),
-          const SizedBox(height: 12),
-          TextField(
-            controller: dealPriceController,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              prefixText: "Rp ",
-              border: OutlineInputBorder(),
-              hintText: "Contoh: 34000",
+  Future<void> _showDealPriceDialog(CommodityPost post) async {
+    final dealPriceController = TextEditingController();
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Feedback Harga Deal"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text("Berapa harga kesepakatan akhirnya?"),
+            const SizedBox(height: 12),
+            TextField(
+              controller: dealPriceController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                prefixText: "Rp ",
+                border: OutlineInputBorder(),
+                hintText: "Contoh: 34000",
+              ),
             ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx),
-          child: const Text("Batal"),
+          ],
         ),
-        ElevatedButton(
-          onPressed: () async {
-            if (dealPriceController.text.isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Harga tidak boleh kosong"),
-                  backgroundColor: Colors.red,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Batal"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (dealPriceController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Harga tidak boleh kosong"),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              Navigator.pop(ctx);
+
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (ctx) => const Center(
+                  child: CircularProgressIndicator(),
                 ),
               );
-              return;
-            }
 
-            Navigator.pop(ctx); // Close dialog
+              final soldPrice = double.tryParse(
+                dealPriceController.text.replaceAll('.', ''),
+              ) ?? 0;
 
-            // Show loading
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (ctx) => const Center(
-                child: CircularProgressIndicator(),
-              ),
-            );
-
-            final soldPrice = double.tryParse(
-              dealPriceController.text.replaceAll('.', ''),
-            ) ?? 0;
-
-            try {
-              print("🔄 Marking listing ${post.id} as sold with price: $soldPrice");
-              
-              // ✅ 1. Update listing ke sold
-              final result = await _listingService.markAsSold(
-                listingId: post.id,
-                soldPrice: soldPrice,
-              );
-
-              print("✅ Result: ${result['success']}");
-
-              if (mounted) Navigator.pop(context); // Close loading
-
-              if (result['success']) {
-                print("✅ Listing marked as sold successfully");
+              try {
+                print("🔄 Marking listing ${post.id} as sold with price: $soldPrice");
                 
-                await _loadMyListings(); // Reload data
-                
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Selamat! Iklan ditandai laku & transaksi diselesaikan."),
-                      backgroundColor: Colors.green,
-                      duration: Duration(seconds: 3),
-                    ),
-                  );
+                final result = await _listingService.markAsSold(
+                  listingId: post.id,
+                  soldPrice: soldPrice,
+                );
+
+                print("✅ Result: ${result['success']}");
+
+                if (mounted) Navigator.pop(context);
+
+                if (result['success']) {
+                  print("✅ Listing marked as sold successfully");
+                  
+                  await _loadMyListings();
+                  
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Selamat! Iklan ditandai laku & transaksi diselesaikan."),
+                        backgroundColor: Colors.green,
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                  }
+                } else {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          result['message'] ?? 'Gagal menandai laku',
+                        ),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 }
-              } else {
+              } catch (e) {
+                print("❌ Error: $e");
+                if (mounted) Navigator.pop(context);
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(
-                        result['message'] ?? 'Gagal menandai laku',
-                      ),
+                      content: Text("Error: $e"),
                       backgroundColor: Colors.red,
                     ),
                   );
                 }
               }
-            } catch (e) {
-              print("❌ Error: $e");
-              if (mounted) Navigator.pop(context); // Close loading
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text("Error: $e"),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            }
-          },
-          child: const Text("Simpan"),
-        ),
-      ],
-    ),
-  );
-}
+            },
+            child: const Text("Simpan"),
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _updateOfferPrice(CommodityPost post) async {
     final newPriceController = TextEditingController(
@@ -365,7 +353,6 @@ Future<void> _showDealPriceDialog(CommodityPost post) async {
                         Navigator.pop(ctx2);
                         Navigator.pop(ctx);
 
-                        // Show loading
                         showDialog(
                           context: context,
                           barrierDismissible: false,
@@ -381,10 +368,10 @@ Future<void> _showDealPriceDialog(CommodityPost post) async {
                           price: newPrice,
                         );
 
-                        if (mounted) Navigator.pop(context); // Close loading
+                        if (mounted) Navigator.pop(context);
 
                         if (result['success']) {
-                          await _loadMyListings(); // Reload data
+                          await _loadMyListings();
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -470,7 +457,6 @@ Future<void> _showDealPriceDialog(CommodityPost post) async {
             onPressed: () async {
               Navigator.pop(ctx);
 
-              // Show loading
               showDialog(
                 context: context,
                 barrierDismissible: false,
@@ -485,10 +471,10 @@ Future<void> _showDealPriceDialog(CommodityPost post) async {
                 contactNumber: contactController.text,
               );
 
-              if (mounted) Navigator.pop(context); // Close loading
+              if (mounted) Navigator.pop(context);
 
               if (result['success']) {
-                await _loadMyListings(); // Reload data
+                await _loadMyListings();
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text("Info Iklan diperbarui.")),
@@ -542,7 +528,7 @@ Future<void> _showDealPriceDialog(CommodityPost post) async {
                     ],
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 10, bottom: 25),
+                    padding: const EdgeInsets.only(top: 10, bottom: 25, left: 20, right: 20),
                     child: Column(
                       children: [
                         const Text(
@@ -555,7 +541,6 @@ Future<void> _showDealPriceDialog(CommodityPost post) async {
                           ),
                         ),
                         const SizedBox(height: 16),
-
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -618,6 +603,7 @@ Future<void> _showDealPriceDialog(CommodityPost post) async {
                             ],
                           ),
                         ),
+                        const SizedBox(height: 20),
                       ],
                     ),
                   ),
@@ -874,7 +860,6 @@ Future<void> _showDealPriceDialog(CommodityPost post) async {
                                             ),
                                           ),
                                           child: ClipRRect(
-                                            // ✅ Gunakan ClipRRect + Image.network
                                             borderRadius: BorderRadius.circular(
                                               16,
                                             ),
@@ -1033,11 +1018,9 @@ Future<void> _showDealPriceDialog(CommodityPost post) async {
                                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                                       child: Row(
                                         children: [
-                                          // ✅ TOMBOL "TIDAK JADI" - FIXED
                                           Expanded(
                                             child: OutlinedButton(
                                               onPressed: () async {
-                                                // Konfirmasi dulu
                                                 final confirm = await showDialog<bool>(
                                                   context: context,
                                                   builder: (ctx) => AlertDialog(
@@ -1060,7 +1043,6 @@ Future<void> _showDealPriceDialog(CommodityPost post) async {
                                                 );
 
                                                 if (confirm == true) {
-                                                  // Show loading
                                                   showDialog(
                                                     context: context,
                                                     barrierDismissible: false,
@@ -1072,14 +1054,13 @@ Future<void> _showDealPriceDialog(CommodityPost post) async {
                                                   try {
                                                     print("🔄 Updating transactions for listing ${post.id} to failed");
                                                     
-                                                    // ✅ Update semua transaksi yang terkait dengan listing ini
                                                     await TransactionService().updateTransactionsByListing(
                                                       listingId: post.id,
                                                       status: 'failed',
                                                     );
 
-                                                    if (mounted) Navigator.pop(context); // Close loading
-                                                    await _loadMyListings(); // Reload data
+                                                    if (mounted) Navigator.pop(context);
+                                                    await _loadMyListings();
 
                                                     if (mounted) {
                                                       ScaffoldMessenger.of(context).showSnackBar(
@@ -1091,7 +1072,7 @@ Future<void> _showDealPriceDialog(CommodityPost post) async {
                                                     }
                                                   } catch (e) {
                                                     print("❌ Error: $e");
-                                                    if (mounted) Navigator.pop(context); // Close loading
+                                                    if (mounted) Navigator.pop(context);
                                                     if (mounted) {
                                                       ScaffoldMessenger.of(context).showSnackBar(
                                                         SnackBar(
@@ -1113,7 +1094,6 @@ Future<void> _showDealPriceDialog(CommodityPost post) async {
 
                                           const SizedBox(width: 12),
 
-                                          // ✅ TOMBOL "TANDAI LAKU"
                                           Expanded(
                                             child: ElevatedButton(
                                               onPressed: () => _markAsSold(post),
@@ -1127,7 +1107,7 @@ Future<void> _showDealPriceDialog(CommodityPost post) async {
                                         ],
                                       ),
                                     ),
-                                                                  ],
+                                ],
                               ),
                             ),
                           ),
@@ -1181,9 +1161,8 @@ Future<void> _showDealPriceDialog(CommodityPost post) async {
           ),
         ),
       ),
-      // ✅ FloatingActionButton untuk buat listing baru
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openListingForm, // Panggil method dengan result handler
+        onPressed: _openListingForm,
         backgroundColor: const Color(0xFF2E7D32),
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text(
@@ -1192,6 +1171,56 @@ Future<void> _showDealPriceDialog(CommodityPost post) async {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+    );
+  }
+
+  // ✅ QUICK ACCESS CARD WIDGET
+  Widget _buildQuickAccessCard({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [color, color.withOpacity(0.7)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white, size: 24),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -836,13 +836,6 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen>
                             color: Colors.black87,
                           ),
                         ),
-                        Text(
-                          'Lihat Semua',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
                       ],
                     ),
                   ),

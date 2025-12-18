@@ -6,6 +6,40 @@ import '../models/user_model.dart';
 class AuthService {
   static const String baseUrl = "http://10.0.2.2:8000/api";
 
+/// UPDATE PASSWORD LANGSUNG
+static Future<String> updatePassword({
+  required String email,
+  required String newPassword,
+}) async {
+  try {
+    final url = Uri.parse("$baseUrl/reset-password");
+
+    final response = await http.post(
+      url,
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: jsonEncode({
+        "email": email,
+        "new_password": newPassword,
+      }),
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      return data["message"] ?? "Password berhasil diubah";
+    } else if (response.statusCode == 404) {
+      return "Email tidak terdaftar";
+    } else {
+      return "Gagal mengubah password";
+    }
+  } catch (e) {
+    return "Terjadi kesalahan: $e";
+  }
+}
+
   /// LOGIN
   static Future<UserModel?> login({
     required String email,

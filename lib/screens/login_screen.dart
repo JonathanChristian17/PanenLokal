@@ -4,6 +4,8 @@ import '../services/auth_service.dart';
 import '../models/user_model.dart';
 import 'register_screen.dart';
 import 'main_nav_screen.dart'; // <--- IMPORT MAIN NAV SCREEN
+import 'forgot_password_screen.dart';
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,6 +20,44 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool isLoading = false;
   bool obscurePassword = true;
+
+  Future<void> handleForgotPassword() async {
+  String email = emailController.text.trim();
+
+  if (email.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Masukkan email untuk reset password")),
+    );
+    return;
+  }
+
+  setState(() => isLoading = true);
+
+  try {
+    // Tangkap pesan dari backend
+  String resultMessage = await AuthService.updatePassword(
+  email: emailController.text.trim(),
+  newPassword: passwordController.text.trim(),
+);
+
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(resultMessage)),
+    );
+
+    // Jika berhasil (pesan mengandung kata "dikirim"), kembali ke login
+    if (resultMessage.contains("dikirim")) {
+      Navigator.pop(context);
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Terjadi kesalahan: $e")),
+    );
+  } finally {
+    setState(() => isLoading = false);
+  }
+}
+
 
   Future<void> handleLogin() async {
     String email = emailController.text.trim();
@@ -89,6 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   hint: "email@contoh.com",
                 ),
                 const SizedBox(height: 15),
+                
 
                 /// PASSWORD
                 inputField(
@@ -103,6 +144,27 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
 
                 const SizedBox(height: 30),
+
+                /// LUPA PASSWORD
+Align(
+  alignment: Alignment.centerRight,
+  child: TextButton(
+    onPressed: () => Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ResetPasswordScreen()),
+    ),
+    child: Text(
+      "Lupa Password?",
+      style: TextStyle(
+        color: Theme.of(context).primaryColor,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  ),
+),
+const SizedBox(height: 10),
+
+
 
                 SizedBox(
                   width: double.infinity,

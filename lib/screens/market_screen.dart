@@ -150,7 +150,7 @@ class _MarketScreenState extends State<MarketScreen> {
                         crossAxisCount: 2,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
-                        childAspectRatio: 0.95,
+                        childAspectRatio: 0.75,
                       ),
                       itemCount: marketItems.length,
                       itemBuilder: (context, index) {
@@ -238,14 +238,9 @@ class _MarketScreenState extends State<MarketScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Icon komoditas
-                    if (item.icon.isNotEmpty)
-                      Center(
-                        child: Text(
-                          item.icon,
-                          style: const TextStyle(fontSize: 36),
-                        ),
-                      ),
+                    Center(
+                      child: _buildCommodityImage(item),
+                    ),
                     const SizedBox(height: 12),
                     // Nama komoditas
                     Text(
@@ -305,5 +300,73 @@ class _MarketScreenState extends State<MarketScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildCommodityImage(MarketPrice item) {
+    final Map<String, String> imageMap = {
+      'brokoli': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQoZibA23ib5SuJNRALc1XaRwYcGhLMWASI-Q&s',
+      'buncis': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_X-tzbbZ2-qWVWZ5HYikXYInPt96gpKcXFw&s',
+      'cabe hijau': 'https://tribratanews.polri.go.id/web/image/blog.post/65587/image',
+      'cabai hijau': 'https://tribratanews.polri.go.id/web/image/blog.post/65587/image',
+      'cabe merah': 'https://image.astronauts.cloud/product-images/2024/12/CabeMerahKeriting1_1ee33114-5322-4f80-ab7b-3f6013c585d5_900x900.jpg',
+      'cabai merah': 'https://image.astronauts.cloud/product-images/2024/12/CabeMerahKeriting1_1ee33114-5322-4f80-ab7b-3f6013c585d5_900x900.jpg',
+      'cabai rawit kasar': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTgsidARD2fph8fxMLJhGsbW3LceDWYVTS27Q&s',
+      'cabai rawit kecil': 'https://image.astronauts.cloud/product-images/2024/12/CabeRawit2_5f19172c-f8d4-4a81-b45e-f15fde938349_900x900.jpg',
+      'daun prey': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRSwht1xG9adGTeOaGxMnyH-tRF30GEDBWUiw&s',
+      'daun sop': 'https://img-cdn.medkomtek.com/-I_5HiTizAH_rdGu7qmppL2kjfc=/0x0/smart/filters:quality(100):format(webp)/article/JGO9ltUqCUUf8iQa3qrZ_/original/042653600_1502179311-4-Manfaat-Daun-Seledri-yang-Belum-Anda-Ketahui.jpg',
+      'ercis brastagi': 'https://media.istockphoto.com/id/504313024/id/foto/gula-snap-kacang-polong.jpg?s=612x612&w=0&k=20&c=i0OWiOL7c-Wsfwnv6ZZq3T2iExJANlTO7T0M4XCdLcc=',
+      'ercis': 'https://media.istockphoto.com/id/504313024/id/foto/gula-snap-kacang-polong.jpg?s=612x612&w=0&k=20&c=i0OWiOL7c-Wsfwnv6ZZq3T2iExJANlTO7T0M4XCdLcc=',
+      'jagung manis': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSSU7ZqgX_952IFs29F1Hnp_J9q1uI1KAUHPA&s',
+      'jipang besar': 'https://img.lazcdn.com/g/p/7b6888adbb25d6bcf5cbaa27f528bae9.jpg_720x720q80.jpg',
+      'kentang kuning': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQPqHFrT3tIz9CBrCbxAsPsNgPT_F-fTs7SFQ&s',
+      'kentang merah': 'https://www.static-src.com/wcsstore/Indraprastha/images/catalog/full/catalog-image/103/MTA-178650803/no-brand_kentang-merah_full01.jpg',
+      'kol bulat': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRwpaa9tR-6mpvVAsc38OdujuFloIz4q8qfAA&s',
+      'kubis': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRwpaa9tR-6mpvVAsc38OdujuFloIz4q8qfAA&s',
+      'kol bunga': 'https://raisa.aeonstore.id/wp-content/uploads/2023/04/801621.jpeg',
+      'labu': 'https://pasarternate.com/wp-content/uploads/2025/06/Labu-kuning.jpg',
+      'sayur botol': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQzibjdrgDIgQ9pqkcSyhS0JBbMZWC-xbOG8w&s',
+      'sayur pahit': 'https://segarpagi.com/wp-content/uploads/2023/02/Sawi-Pahit-1.jpg',
+      'sayur putih': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQDfyQ3tKLbbHhAt2OiXA-TrHYNixD63jHIfQ&s',
+      'selada': 'https://d1vbn70lmn1nqe.cloudfront.net/prod/wp-content/uploads/2023/09/06014959/Kandungan-Nutrisi-yang-Terdapat-dalam-Daun-Selada.jpg',
+      'terong antaboga': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSA5Cf20HBBaTzJgCw3uNCXpFLc4ujI_tIghw&s',
+      'terong belanda': 'https://images.tokopedia.net/blog-tokopedia-com/uploads/2021/08/Featured_Manfaat-Terong-Belanda.jpg',
+      'tomat': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Tomato_je.jpg/1200px-Tomato_je.jpg',
+      'wortel': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRba3x5cGZnr5uC2xWOoq3EVBtT12f-YsanHQ&s',
+      'anak jipang': 'https://www.shutterstock.com/image-photo/closeup-small-chayote-sicyos-edule-600nw-2480192811.jpg',
+    };
+
+    String? imageUrl;
+    String name = item.commodity.toLowerCase();
+
+    // Find first key that matches the commodity name partial match
+    for (var key in imageMap.keys) {
+      if (name.contains(key)) {
+        imageUrl = imageMap[key];
+        break;
+      }
+    }
+
+    if (imageUrl != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(15.0),
+        child: Image.network(
+          imageUrl,
+          height: 90,
+          width: 90,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Text(
+              item.icon,
+              style: const TextStyle(fontSize: 48),
+            );
+          },
+        ),
+      );
+    } else {
+      return Text(
+        item.icon,
+        style: const TextStyle(fontSize: 48),
+      );
+    }
   }
 }

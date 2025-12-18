@@ -57,7 +57,7 @@ class _MarketScreenState extends State<MarketScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // HEADER
+                  // HEADER with Back Button
                   Container(
                     width: double.infinity,
                     decoration: const BoxDecoration(
@@ -76,23 +76,51 @@ class _MarketScreenState extends State<MarketScreen> {
                           top: 10, bottom: 25, left: 20, right: 20),
                       child: Column(
                         children: [
-                          const Text(
-                            "Daftar Harga Komoditas",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1B5E20)),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "Data Tanggal: $formattedDate",
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 12,
-                            ),
+                          // ✅ BACK BUTTON + TITLE ROW
+                          Row(
+                            children: [
+                              // ✅ BACK BUTTON
+                              IconButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                icon: const Icon(
+                                  Icons.arrow_back_ios,
+                                  color: Color(0xFF1B5E20),
+                                  size: 24,
+                                ),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              ),
+                              const SizedBox(width: 12),
+                              // ✅ TITLE
+                              Expanded(
+                                child: Column(
+                                  children: [
+                                    const Text(
+                                      "Daftar Harga Komoditas",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF1B5E20)),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "Data Tanggal: $formattedDate",
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // ✅ SPACER untuk balance layout
+                              const SizedBox(width: 36),
+                            ],
                           ),
                         ],
                       ),

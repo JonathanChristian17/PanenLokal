@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:panen_lokal/models/user_model.dart';
-import 'package:panen_lokal/screens/admin_user_management_screen.dart';
 import 'package:panen_lokal/services/auth_service.dart';
 
 import 'buyer_home_screen.dart';
 import 'farmer_home_screen.dart';
-import 'market_screen.dart';
 import 'listing_form_screen.dart';
 import 'profile_screen.dart';
 import 'admin_verification_screen.dart';
 import 'transaction_screen.dart';
-import 'request_screen.dart';
 import 'admin_user_management_screen.dart';
 
 class NavPageContent {
@@ -71,42 +68,37 @@ class _MainNavScreenState extends State<MainNavScreen> {
     // Inisialisasi semua halaman
     final Widget berandaPage = const BuyerHomeScreen(title: 'Beranda');
     final Widget lapakSayaPage = const FarmerHomeScreen(title: 'Lapak Saya');
-    final Widget pasarPage = const MarketScreen();
     final Widget listingPage = const ListingFormScreen();
     final Widget transaksiPage = const TransactionScreen();
     final Widget verifikasiPage = const AdminVerificationScreen();
     final Widget kelolaUserPage = const AdminUserManagementScreen();
     final Widget profilPage = ProfileScreen(onVerificationChanged: refreshUserData);
-    final Widget favoritPage = const RequestScreen();
 
     if (role == 'admin') {
-      // ADMIN: 5 Menu (BERANDA, PASAR, VERIFIKASI, FAVORIT, PROFIL)
+      // ✅ ADMIN: 4 Menu (BERANDA, VERIFIKASI, KELOLA USER, PROFIL)
+      // Market & Favorit dihapus dari navbar, diakses via icons di header
       return [
         NavPageContent(label: 'BERANDA', icon: Icons.home, page: berandaPage),
-        NavPageContent(label: 'PASAR', icon: Icons.trending_up, page: pasarPage),
         NavPageContent(label: 'VERIFIKASI', icon: Icons.verified_user, page: verifikasiPage),
         NavPageContent(label: 'KELOLA USER', icon: Icons.people, page: kelolaUserPage),
-        NavPageContent(label: 'FAVORIT', icon: Icons.favorite, page: favoritPage),
         NavPageContent(label: 'PROFIL', icon: Icons.person, page: profilPage),
       ];
     } else if (role == 'farmer' && isVerified) {
-      // FARMER VERIFIED: 6 Menu (BERANDA, LAPAK SAYA, PASAR, IKLAN, FAVORIT, PROFIL)
+      // ✅ FARMER VERIFIED: 5 Menu (BERANDA, LAPAK SAYA, IKLAN, TRANSAKSI, PROFIL)
+      // Market & Favorit dihapus dari navbar, diakses via icons di header
       return [
         NavPageContent(label: 'BERANDA', icon: Icons.home, page: berandaPage),
         NavPageContent(label: 'LAPAK SAYA', icon: Icons.store, page: lapakSayaPage),
-        NavPageContent(label: 'PASAR', icon: Icons.trending_up, page: pasarPage),
         NavPageContent(label: 'IKLAN', icon: Icons.add_box, page: listingPage),
         NavPageContent(label: 'TRANSAKSI', icon: Icons.receipt_long, page: transaksiPage),
-        NavPageContent(label: 'FAVORIT', icon: Icons.favorite, page: favoritPage),
         NavPageContent(label: 'PROFIL', icon: Icons.person, page: profilPage),
       ];
     } else {
-      // BUYER atau FARMER belum verified: 4 Menu
+      // ✅ BUYER atau FARMER belum verified: 3 Menu (BERANDA, TRANSAKSI, PROFIL)
+      // Market & Favorit dihapus dari navbar, diakses via icons di header
       return [
         NavPageContent(label: 'BERANDA', icon: Icons.home, page: berandaPage),
-        NavPageContent(label: 'PASAR', icon: Icons.trending_up, page: pasarPage),
         NavPageContent(label: 'TRANSAKSI', icon: Icons.receipt_long, page: transaksiPage),
-        NavPageContent(label: 'FAVORIT', icon: Icons.favorite, page: favoritPage),
         NavPageContent(label: 'PROFIL', icon: Icons.person, page: profilPage),
       ];
     }

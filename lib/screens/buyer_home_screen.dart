@@ -6,7 +6,10 @@ import 'package:panen_lokal/services/auth_service.dart';
 import 'listing_detail_screen.dart';
 import 'package:panen_lokal/services/listing_service.dart';
 import 'package:panen_lokal/services/transaction_service.dart';
+import 'package:panen_lokal/services/favorite_service.dart';
 import '../widgets/notification_button.dart';
+import 'market_screen.dart';
+import 'request_screen.dart';
 
 class CommodityPost {
   final String id;
@@ -39,7 +42,6 @@ class CommodityPost {
     this.images,
   });
 
-  // Factory method untuk convert dari API response
   factory CommodityPost.fromJson(Map<String, dynamic> json) {
     return CommodityPost(
       id: json['id'].toString(),
@@ -75,6 +77,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen>
   final TextEditingController _searchController = TextEditingController();
   final Set<String> _favoriteIds = {};
   final ListingService _listingService = ListingService();
+  final FavoriteService _favoriteService = FavoriteService();
   CommodityPost? _contactedPost;
 
   String _userName = "User";
@@ -85,42 +88,57 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen>
   void initState() {
     super.initState();
     _loadCurrentUser();
+    _loadFavoriteIds(); // Load favorite IDs first
     _loadAllListings();
   }
 
   final TransactionService _transactionService = TransactionService();
 
-  // ✅ DIPERBAIKI: Create Transaction dengan error handling
   Future<void> _createTransaction(CommodityPost post) async {
     try {
+      print("🔄 Creating transaction for listing: ${post.id}");
+      
       final result = await _transactionService.createTransaction(post.id);
+
+      print("✅ Transaction result: ${result['success']}");
+      print("📋 Message: ${result['message']}");
 
       if (result['success'] == true) {
         if (mounted) {
           setState(() {
             _contactedPost = post;
           });
+          
+          print("✅ Transaction created successfully");
         }
       } else {
+        print("⚠️ Transaction creation failed: ${result['message']}");
+        
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(result['message'] ?? "Gagal memulai transaksi"),
+              backgroundColor: Colors.orange,
             ),
           );
         }
       }
     } catch (e) {
+      print("❌ Error creating transaction: $e");
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               "Error: ${e.toString().replaceAll('Exception: ', '')}",
             ),
-            backgroundColor: Colors.red,
+            backgroundColor: Colors.orange,
           ),
         );
       }
+      
+      // Re-throw to be caught by caller
+      rethrow;
     }
   }
 
@@ -138,16 +156,18 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen>
     final whatsappUrl = Uri.parse("https://wa.me/$cleanedNumber?text=$message");
 
     try {
-      if (await canLaunchUrl(whatsappUrl)) {
-        await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
-      } else {
-        throw 'Tidak dapat membuka WhatsApp';
-      }
+      await launchUrl(
+        whatsappUrl,
+        mode: LaunchMode.externalApplication,
+      );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error membuka WhatsApp: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -164,7 +184,92 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen>
     }
   }
 
-  // ✅ DIPERBAIKI: Konfirmasi kontak dengan loading indicator
+  // ✅ Load favorite IDs from database
+  Future<void> _loadFavoriteIds() async {
+    try {
+      final result = await _favoriteService.getFavoriteIds();
+      
+      if (result['success'] == true) {
+        final List<dynamic> ids = result['favorite_ids'] ?? [];
+        setState(() {
+          _favoriteIds.clear();
+          _favoriteIds.addAll(ids.map((id) => id.toString()));
+        });
+        print('✅ Loaded ${_favoriteIds.length} favorite IDs');
+      }
+    } catch (e) {
+      print('❌ Error loading favorite IDs: $e');
+    }
+  }
+
+  // ✅ Toggle favorite with API call
+  Future<void> _toggleFavorite(String id) async {
+    // Optimistic update
+    final bool wasFavorited = _favoriteIds.contains(id);
+    
+    setState(() {
+      if (wasFavorited) {
+        _favoriteIds.remove(id);
+      } else {
+        _favoriteIds.add(id);
+      }
+    });
+
+    try {
+      final result = await _favoriteService.toggleFavorite(id);
+      
+      if (result['success'] == true) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 
+                (wasFavorited ? "Dihapus dari Favorit" : "Ditambahkan ke Favorit ❤️")),
+              duration: const Duration(seconds: 1),
+              backgroundColor: wasFavorited ? null : Colors.pink,
+              behavior: wasFavorited ? null : SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } else {
+        // Revert optimistic update on failure
+        setState(() {
+          if (wasFavorited) {
+            _favoriteIds.add(id);
+          } else {
+            _favoriteIds.remove(id);
+          }
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Gagal mengubah favorit'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Revert optimistic update on error
+      setState(() {
+        if (wasFavorited) {
+          _favoriteIds.add(id);
+        } else {
+          _favoriteIds.remove(id);
+        }
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   void _confirmContact(BuildContext context, CommodityPost post) {
     showDialog(
       context: context,
@@ -181,9 +286,9 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen>
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(ctx);
+              Navigator.pop(ctx); // Close dialog
 
-              // ✅ Show loading
+              // Show loading
               showDialog(
                 context: context,
                 barrierDismissible: false,
@@ -192,20 +297,35 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen>
               );
 
               try {
-                await _createTransaction(post); // ✅ INSERT DB
+                // Create transaction first
+                await _createTransaction(post);
 
                 if (mounted) {
                   Navigator.pop(context); // Close loading
-                  await _openWhatsApp(post.contactInfo, post.commodity); // ✅ WA
+                  
+                  // Open WhatsApp
+                  await _openWhatsApp(post.contactInfo, post.commodity);
                 }
               } catch (e) {
                 if (mounted) {
                   Navigator.pop(context); // Close loading
+                  
+                  // Show error but still try to open WhatsApp
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Transaksi dicatat. Membuka WhatsApp..."),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                  
+                  // Still open WhatsApp even if transaction recording fails
+                  await _openWhatsApp(post.contactInfo, post.commodity);
                 }
               }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF2E7D32),
+              foregroundColor: Colors.white,
             ),
             child: const Text("Hubungi"),
           ),
@@ -214,7 +334,6 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen>
     );
   }
 
-  // Load semua listing aktif dari database
   Future<void> _loadAllListings() async {
     setState(() => _isLoading = true);
 
@@ -264,85 +383,6 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen>
       (Match m) => '${m[1]}.',
     );
   }
-
-  void _toggleFavorite(String id) {
-    setState(() {
-      if (_favoriteIds.contains(id)) {
-        _favoriteIds.remove(id);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Dihapus dari Favorit"),
-            duration: Duration(seconds: 1),
-          ),
-        );
-      } else {
-        _favoriteIds.add(id);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Ditandai sebagai Favorit ❤️"),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.pink,
-            duration: Duration(seconds: 1),
-          ),
-        );
-      }
-    });
-  }
-
-  Widget _buildTrendCard(
-    String title,
-    String trendType,
-    Color color,
-    IconData icon,
-  ) {
-    return Expanded(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.8), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.15),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 24, color: color),
-            const SizedBox(height: 8),
-            Text(
-              trendType,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-
-        // ✅ KONFIRMASI SETELAH HUBUNGI
-      ),
-    );
-  }
-
-
 
   Widget _buildHorizontalCommodityCard(
     BuildContext context,
@@ -399,7 +439,6 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen>
                       right: BorderSide(color: Colors.grey.shade200),
                     ),
                   ),
-
                   child: ClipRRect(
                     borderRadius: const BorderRadius.horizontal(
                       left: Radius.circular(19),
@@ -445,7 +484,6 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen>
                           ),
                   ),
                 ),
-
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.all(12),
@@ -520,7 +558,6 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen>
                             ),
                           ],
                         ),
-
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.end,
@@ -577,7 +614,6 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen>
                               onPressed: () {
                                 _confirmContact(context, post);
                               },
-
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF2E7D32),
                                 foregroundColor: Colors.white,
@@ -609,7 +645,6 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen>
                 ),
               ],
             ),
-
             Positioned(
               top: 8,
               right: 8,
@@ -634,8 +669,6 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen>
       ),
     );
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -742,7 +775,6 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen>
                           ),
                         ),
                         const SizedBox(height: 24),
-
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -781,40 +813,40 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen>
                             onChanged: (_) => setState(() {}),
                           ),
                         ),
-
-                        const SizedBox(height: 16),
-
-                        const Padding(
-                          padding: EdgeInsets.only(bottom: 12),
-                          child: Text(
-                            "Tren Harga Pasar Saat Ini",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
-
+                        const SizedBox(height: 20),
+                        // ✅ QUICK ACCESS ICONS - MARKET & FAVORIT
                         Row(
                           children: [
-                            _buildTrendCard(
-                              "Cabai Merah",
-                              "NAIK HARGA",
-                              Colors.red,
-                              Icons.trending_up,
+                            Expanded(
+                              child: _buildQuickAccessCard(
+                                icon: Icons.trending_up,
+                                label: "Harga Pasar",
+                                color: const Color(0xFF2E7D32),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const MarketScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
                             ),
-                            _buildTrendCard(
-                              "Bawang Merah",
-                              "STABIL",
-                              Colors.blue,
-                              Icons.remove,
-                            ),
-                            _buildTrendCard(
-                              "Tomat",
-                              "TURUN HARGA",
-                              Colors.green,
-                              Icons.trending_down,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildQuickAccessCard(
+                                icon: Icons.favorite,
+                                label: "Permintaan",
+                                color: Colors.pink,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const RequestScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
                             ),
                           ],
                         ),
@@ -822,7 +854,6 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen>
                     ),
                   ),
 
-                  // Header List Rekomendasi
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
                     child: Row(
@@ -840,7 +871,6 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen>
                     ),
                   ),
 
-                  // List Item (Dengan handling Loading State dari kode pertama)
                   _isLoading
                       ? const Padding(
                           padding: EdgeInsets.only(top: 50),
@@ -869,6 +899,52 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen>
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  // ✅ QUICK ACCESS CARD WIDGET
+  Widget _buildQuickAccessCard({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [color, color.withOpacity(0.7)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white, size: 28),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ],
         ),
       ),
     );
